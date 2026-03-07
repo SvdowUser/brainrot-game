@@ -1,0 +1,68 @@
+
+:root{
+  --panel:rgba(8,17,28,.74); --line:rgba(255,255,255,.12); --text:#f4f7fb; --muted:#9cb2ca;
+  --accent:#4ab2ff; --shadow:0 18px 50px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#08131d;color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+body{touch-action:none}
+canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;background:radial-gradient(circle at 50% 40%, #1b3d3c, #0b1823 80%)}
+.glass{background:var(--panel);backdrop-filter: blur(14px);border:1px solid var(--line);box-shadow:var(--shadow)}
+.inset{background:rgba(255,255,255,.03)}
+.hidden{display:none!important}
+.screen-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:28px;background:radial-gradient(circle at top, rgba(74,178,255,.14), transparent 45%), rgba(4,8,14,.35)}
+.menu-card{width:min(1120px,100%);display:grid;grid-template-columns:1.2fr .8fr;gap:22px;padding:24px;border-radius:28px}
+.brand-row{display:flex;gap:18px;align-items:flex-start;margin-bottom:18px}
+.eyebrow{letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-size:12px}
+h1{margin:.1em 0 .25em;font-size:52px;line-height:.95}
+.sub{margin:0;color:#d2deeb;max-width:760px}
+.coin-spin{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ffd75f,#ffae35);color:#3d2500;font-size:24px;font-weight:900;animation:spin 2s linear infinite;box-shadow:0 12px 28px rgba(255,175,53,.35)}
+.coin-spin.small{width:34px;height:34px;font-size:16px}
+@keyframes spin{to{transform:rotateY(360deg)}}
+.field-group{margin-top:18px}
+label{display:block;margin-bottom:8px;color:#dce7f4;font-weight:700}
+input{width:100%;height:56px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);padding:0 18px;font-size:16px;outline:none}
+input:focus{border-color:rgba(74,178,255,.7);box-shadow:0 0 0 3px rgba(74,178,255,.15)}
+.picker-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tiny-hint{font-size:12px;color:var(--muted)}
+.skin-picker{display:grid;grid-template-columns:64px 1fr 64px;gap:12px;align-items:center}
+.icon-btn{height:56px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font-size:28px;cursor:pointer}
+.skin-stage{height:280px;border-radius:24px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.skin-preview{width:134px;height:134px;border-radius:26px;position:relative;transform-style:preserve-3d}
+.skin-name{font-size:24px;font-weight:900}
+.skin-status{color:var(--muted)}
+.rotate-slow{animation:rotSlow 10s linear infinite}
+@keyframes rotSlow{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+.skin-dots{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.16)}
+.dot.active{background:var(--accent)}
+.primary-btn{height:58px;border:none;border-radius:18px;padding:0 28px;background:linear-gradient(135deg,#4ab2ff,#197cff);color:#fff;font-weight:900;font-size:18px;cursor:pointer;box-shadow:0 14px 30px rgba(25,124,255,.35)}
+.small-btn{height:52px;padding:0 18px;font-size:16px}
+.menu-actions{margin-top:22px;display:flex;gap:12px}
+.menu-right{padding:18px;border-radius:22px}
+.feature-list{margin:0;padding-left:18px;color:#d6e3f2;display:grid;gap:8px}
+.hud{position:fixed;inset:0;padding:18px;pointer-events:none}
+.cluster{display:flex;gap:14px;align-items:flex-start}
+.top-left{position:absolute;left:18px;top:18px}
+.top-right{position:absolute;right:18px;top:18px}
+.portrait{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:22px;min-width:320px}
+.portrait-avatar{width:58px;height:58px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.14)}
+.portrait-name{font-size:30px;font-weight:900;line-height:1}
+.coin-hud,.score-hud{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:22px;font-size:22px;font-weight:900}
+.settings-btn{pointer-events:auto}
+.leaderboard{position:absolute;right:18px;top:98px;width:270px;padding:14px 14px 10px;border-radius:24px;pointer-events:auto}
+.lb-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;padding:7px 10px;border-radius:14px}
+.lb-row.you{background:rgba(74,178,255,.14)}
+.lb-color{width:10px;height:10px;border-radius:50%}
+.lb-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-panel{position:absolute;left:18px;bottom:18px;width:min(420px,calc(100vw - 36px));padding:14px;border-radius:24px;pointer-events:auto}
+.chat-log{height:150px;overflow:auto;padding:4px 6px 8px;color:#dbe6f5}
+.chat-row{display:grid;grid-template-columns:1fr auto;gap:10px}
+.mobile-controls{position:absolute;right:18px;bottom:22px;pointer-events:auto}
+.joystick{width:120px;height:120px;border-radius:50%;position:relative}
+.joystick-knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#5ec3ff,#2f8bff);box-shadow:0 10px 20px rgba(0,0,0,.18)}
+.settings-panel{position:fixed;right:18px;top:18px;width:min(340px,calc(100vw - 36px));padding:18px;border-radius:24px;z-index:10}
+.settings-head{display:flex;justify-content:space-between;align-items:center}
+.settings-panel p{color:#dbe7f3}
+@media (max-width: 980px){.menu-card{grid-template-columns:1fr}h1{font-size:40px}.leaderboard{top:auto;bottom:210px}}
+@media (max-width: 768px){.portrait-name{font-size:24px}.portrait{min-width:0;max-width:calc(100vw - 36px)}.coin-hud,.score-hud{font-size:18px}.chat-panel{width:calc(100vw - 36px)}}
