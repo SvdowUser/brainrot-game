@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Los Tralaleritos 3D Beach Hub</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <header class="topbar">
+    <div class="profile-chip">
+      <div class="avatar" id="avatarInitials">LT</div>
+      <div class="profile-text">
+        <div class="eyebrow">Los Tralaleritos Hub</div>
+        <div class="username" id="playerName">Guest</div>
+      </div>
+    </div>
+    <div class="server-chip">Beach-01 · Guest Lobby</div>
+  </header>
+  <aside class="hud-card left-help"><div>Move <b>WASD</b> / Arrows</div><div>Run <b>Shift</b></div><div>Look drag / touch</div></aside>
+  <aside class="hud-card right-help"><div>Beach Plaza · Social Cove</div><div>NPC Corner · Mini Games Pier</div><div>Locked Areas</div></aside>
+  <div class="bottom-pill">Guest mode works instantly. Multiplayer, voice and accounts come next.</div>
+  <section class="chat-panel">
+    <div class="chat-log" id="chatLog"></div>
+    <div class="chat-row"><input id="chatInput" type="text" maxlength="80" placeholder="Type a message..." /><button id="chatSend" type="button">Send</button></div>
+  </section>
+  <div class="joystick" id="joystick"><div class="joystick-knob" id="joystickKnob"></div></div>
+  <div class="guest-modal" id="guestModal" aria-hidden="false">
+    <div class="guest-card">
+      <h1>Enter your name</h1>
+      <p>Start instantly as a guest. No account needed yet.</p>
+      <div class="guest-row"><input id="nameInput" type="text" maxlength="16" placeholder="Choose a username" autocomplete="off" /><button id="enterButton" type="button">Enter hub</button></div>
+      <div class="hint">Press Enter or click the button</div>
+    </div>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
