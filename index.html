@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Los Tralaleritos 3D Beach Hub</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="player-chip">
+        <div class="avatar-badge">LT</div>
+        <div class="player-meta">
+          <div class="player-title">Los Tralaleritos Hub</div>
+          <div class="player-name" id="playerName">Guest</div>
+        </div>
+      </div>
+      <div class="server-chip">Beach-01 · Prototype</div>
+    </header>
+
+    <div id="usernameModal" class="modal">
+      <div class="modal-card">
+        <h1>Enter your name</h1>
+        <p>This starter stores the name locally for now. Real account + multiplayer comes next.</p>
+        <form id="nameForm">
+          <input id="nameInput" type="text" maxlength="16" placeholder="Choose a username" autocomplete="off" />
+          <button type="submit">Enter hub</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="hint-box">
+        <strong>Move</strong> WASD / Arrows<br />
+        <strong>Run</strong> Shift<br />
+        <strong>Look</strong> drag / touch<br />
+      </div>
+      <div class="hint-box right">
+        Beach Plaza · Social Cove · Mini Games Pier · Locked Areas
+      </div>
+    </div>
+
+    <div class="joystick" id="joystick">
+      <div class="joystick-base">
+        <div class="joystick-knob" id="joystickKnob"></div>
+      </div>
+    </div>
+
+    <div class="chat-pill">Multiplayer chat comes in the next phase</div>
+    <canvas id="scene"></canvas>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
