@@ -1,1 +1,0 @@
-Put future meme gallery images here.
