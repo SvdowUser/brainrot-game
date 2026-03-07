@@ -650,6 +650,22 @@ function createPlayer() {
     return shoe;
   }
 
+  nameInput.focus();
++ // Verhindere Neuladen bei Enter im Namensfeld
++ nameInput.addEventListener("keydown", (e) => {
++   if (e.key === "Enter") {
++     e.preventDefault();
++     setPlayerName(nameInput.value);
++     modal.classList.add("hidden");
++   }
++ });
+ nameForm.addEventListener("submit", (e) => {
+   e.preventDefault();
+   setPlayerName(nameInput.value);
+   modal.classList.add("hidden");
+ });
+
+  
   const shoeL = makeShoe(-0.62);
   const shoeR = makeShoe(0.62);
   group.add(shoeL, shoeR);
