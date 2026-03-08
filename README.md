@@ -1,3 +1,4 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/README.md b/README.md
 index 5932d02ec148e6830d384b64e5061297c03edd1c..3cafee0df3181ea6ef365dd338246615fe2eb7ca 100644
 --- a/README.md
@@ -75,3 +76,6 @@ index 5932d02ec148e6830d384b64e5061297c03edd1c..3cafee0df3181ea6ef365dd338246615
 +- `http://89.167.75.175:3000`
 +
 +Das kannst du in `client/src/main.js` über `SERVER_URL` ändern.
+ 
+EOF
+)
