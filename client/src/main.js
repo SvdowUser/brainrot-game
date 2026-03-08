@@ -336,6 +336,7 @@ function stepEntity(entity) {
   } else if (entity.trail.length > 0) {
     closeLoop(entity);
   }
+}
 
   const trailOwner = state.trailOwners[i];
   if (trailOwner !== NONE && trailOwner !== entity.id) {
