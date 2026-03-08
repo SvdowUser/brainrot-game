@@ -5,94 +5,86 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>tralala.io</title>
-  <link rel="stylesheet" href="./style.css?v=20260308d" />
+  <link rel="stylesheet" href="./style.css?v=20260308e" />
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body>
   <canvas id="scene"></canvas>
 
   <div id="uiRoot">
-    <section id="menuScreen" class="screen active">
-      <div class="menuTopBar">
-        <button id="menuCoin" class="chip chipCoin" type="button" aria-label="Coins">
-          <span class="hexIcon"></span>
-          <span id="menuCoinValue">0</span>
-        </button>
-        <button id="settingsBtn" class="chip chipIcon" type="button" aria-label="Settings">⚙</button>
-      </div>
+    <section id="menuScreen" class="screen">
+      <header class="topBar">
+        <div class="pill coinPill"><span class="hexCoin"></span><span id="menuCoins">0</span></div>
+        <button id="settingsBtn" class="iconBtn" type="button" aria-label="Open settings">⚙</button>
+      </header>
 
-      <div class="menuCenter">
+      <main class="menuMain">
         <h1 class="logo">tralala<span>.io</span></h1>
-        <div class="heroStage">
-          <div id="heroCube"></div>
+        <div class="heroPanel"><div id="heroCube" class="cube"></div></div>
+
+        <div class="nameRow">
+          <input id="nameInput" maxlength="16" placeholder="Nickname" autocomplete="off" />
+          <div class="pill bestPill">Best <span id="bestScore">0</span></div>
         </div>
 
-        <div class="profileRow">
-          <input id="nameInput" type="text" maxlength="16" placeholder="Nickname" autocomplete="off" />
-          <div class="bestScore">Best <span id="bestScoreValue">0</span></div>
-        </div>
-
-        <button id="playBtn" class="ctaPlay" type="button">▶</button>
-        <button id="openSkinsBtn" class="ctaSub" type="button">Skins</button>
-      </div>
+        <button id="playBtn" class="playBtn" type="button">PLAY</button>
+        <button id="openSkinsBtn" class="subBtn" type="button">Skins</button>
+      </main>
     </section>
 
     <section id="skinsScreen" class="screen hidden">
-      <div class="skinsHeader">
-        <button id="skinsBackBtn" class="smallBtn" type="button">Back</button>
-        <h2>Choose Skin</h2>
-      </div>
+      <header class="skinsHead">
+        <button id="skinsBackBtn" class="subBtn" type="button">Back</button>
+        <h2>Skins</h2>
+      </header>
 
-      <div class="skinCarousel">
+      <div class="skinStage">
         <button id="skinPrevBtn" class="navBtn" type="button">‹</button>
-        <div class="skinPreviewCard">
-          <div id="skinPreviewCube"></div>
+        <div class="skinCard">
+          <div id="skinPreviewCube" class="cube large"></div>
           <h3 id="skinName">SUN</h3>
-          <p id="skinStatus">Unlocked</p>
+          <p id="skinRequirement">Unlocked</p>
         </div>
         <button id="skinNextBtn" class="navBtn" type="button">›</button>
       </div>
 
-      <div class="skinsActions">
-        <button id="skinSelectBtn" class="smallBtn primary" type="button">Select</button>
-      </div>
+      <footer class="skinsFooter">
+        <button id="skinSelectBtn" class="playBtn small" type="button">Select</button>
+      </footer>
     </section>
 
-
-    <section id="settingsSheet" class="settings hidden">
-      <div class="settingsCard">
+    <section id="settingsSheet" class="overlay hidden">
+      <div class="overlayCard">
         <h3>Settings</h3>
-        <button id="settingsCloseBtn" class="smallBtn" type="button">Close</button>
+        <p>Sound and controls options can be added here.</p>
+        <button id="settingsCloseBtn" class="subBtn" type="button">Close</button>
       </div>
     </section>
 
-    <section id="tutorialCard" class="tutorial hidden" role="dialog" aria-live="polite">
+    <section id="tutorialCard" class="tutorial hidden">
       <button id="closeTutorialBtn" class="tutorialClose" type="button">✕</button>
       <div class="tutorialIcon">🌀</div>
-      <p>Close a loop to expand your area.</p>
+      <p>Close a loop to capture territory.</p>
     </section>
 
     <section id="gameHud" class="hidden">
-      <div class="hudTopRow">
-        <div class="chip chipCoin"><span class="hexIcon"></span><span id="coinValue">0</span></div>
-        <div class="chip">Score <span id="scoreValue">0</span></div>
-        <div class="chip">Area <span id="areaValue">0%</span></div>
+      <div class="hudTop">
+        <div class="pill coinPill"><span class="hexCoin"></span><span id="coinValue">0</span></div>
+        <div class="pill">Score <span id="scoreValue">0</span></div>
+        <div class="pill">Area <span id="areaValue">0%</span></div>
       </div>
 
-      <div class="hudSide">
-        <div class="leaderboardCard">
+      <aside class="hudRight">
+        <div class="leaderboard">
           <h3>Leaderboard</h3>
           <ol id="leaderboardList"></ol>
         </div>
-        <div class="playerCard">
-          <span id="playerName">Guest</span>
-          <span id="livesValue">❤❤❤</span>
-        </div>
-      </div>
+        <div class="playerInfo"><span id="playerName">Guest</span><span id="livesValue">❤❤❤</span></div>
+      </aside>
 
-      <canvas id="miniMap" width="124" height="124"></canvas>
+      <canvas id="miniMap" width="132" height="132"></canvas>
 
       <div id="mobileJoystick" aria-hidden="true">
         <div id="joyBase"><div id="joyKnob"></div></div>
@@ -101,19 +93,15 @@
   </div>
 
   <script>
-  (function () {
-    const BUILD = "20260308d";
-    const params = new URLSearchParams(location.search);
-    const seen = localStorage.getItem("tralala_build");
-    if (seen !== BUILD && params.get("v") !== BUILD) {
-      localStorage.setItem("tralala_build", BUILD);
-      params.set("v", BUILD);
-      const q = params.toString();
-      location.replace(`${location.pathname}?${q}${location.hash}`);
-      return;
-    }
-  })();
-</script>
-<script type="module" src="./src/main.js?v=20260308d"></script>
+    (function () {
+      const BUILD = '20260308e';
+      const params = new URLSearchParams(location.search);
+      if (params.get('v') !== BUILD) {
+        params.set('v', BUILD);
+        location.replace(`${location.pathname}?${params.toString()}${location.hash}`);
+      }
+    })();
+  </script>
+  <script type="module" src="./src/main.js?v=20260308e"></script>
 </body>
 </html>

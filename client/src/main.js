@@ -10,47 +10,49 @@ const HALF = (GRID * CELL) / 2;
 const TOTAL = GRID * GRID;
 const NONE = -1;
 const LOBBY_LIMIT = 30;
+const PROFILE_KEY = 'tralala_profile_v3';
 
+const SKINS = [
+  { id: 'SUN', color: 0xf7cb17, trail: 0xffea87, requirement: { type: 'none', text: 'Unlocked' } },
+  { id: 'MINT', color: 0x42df91, trail: 0x98f8c9, requirement: { type: 'area', value: 10, text: 'Capture 10% area' } },
+  { id: 'SKY', color: 0x4caaf9, trail: 0x9ed5ff, requirement: { type: 'area', value: 20, text: 'Capture 20% area' } },
+  { id: 'ROSE', color: 0xff6991, trail: 0xffacc3, requirement: { type: 'area', value: 30, text: 'Capture 30% area' } },
+  { id: 'VIOLET', color: 0x9e75ff, trail: 0xd3c1ff, requirement: { type: 'score', value: 100, text: 'Reach score 100' } },
+  { id: 'LAVA', color: 0xff9342, trail: 0xffc99c, requirement: { type: 'score', value: 300, text: 'Reach score 300' } },
+];
 
 function requireEl(id) {
   const el = document.getElementById(id);
-  if (!el) throw new Error(`Missing required UI element: #${id}`);
+  if (!el) throw new Error(`Missing UI element #${id}`);
   return el;
 }
-
-const SKINS = [
-  { id: 'SUN', color: 0xf7cd1e, trail: 0xffea85, requirement: { type: 'none', text: 'Unlocked' } },
-  { id: 'MINT', color: 0x45de90, trail: 0x9df5c7, requirement: { type: 'area', value: 10, text: 'Cover 10% area' } },
-  { id: 'SKY', color: 0x45aff7, trail: 0x9dd6ff, requirement: { type: 'area', value: 20, text: 'Cover 20% area' } },
-  { id: 'BERRY', color: 0xff6b8f, trail: 0xffabc0, requirement: { type: 'area', value: 30, text: 'Cover 30% area' } },
-  { id: 'VIOLET', color: 0x9d75ff, trail: 0xd0bcff, requirement: { type: 'score', value: 100, text: 'Reach score 100' } },
-  { id: 'LAVA', color: 0xff8f3e, trail: 0xffc28f, requirement: { type: 'score', value: 300, text: 'Reach score 300' } },
-];
 
 const ui = {
   scene: requireEl('scene'),
   menuScreen: requireEl('menuScreen'),
   skinsScreen: requireEl('skinsScreen'),
   gameHud: requireEl('gameHud'),
-  tutorialCard: requireEl('tutorialCard'),
-  closeTutorialBtn: requireEl('closeTutorialBtn'),
-  settingsBtn: requireEl('settingsBtn'),
   settingsSheet: requireEl('settingsSheet'),
+  tutorialCard: requireEl('tutorialCard'),
+
+  settingsBtn: requireEl('settingsBtn'),
   settingsCloseBtn: requireEl('settingsCloseBtn'),
-  menuCoinValue: requireEl('menuCoinValue'),
-  bestScoreValue: requireEl('bestScoreValue'),
-  nameInput: requireEl('nameInput'),
-  heroCube: requireEl('heroCube'),
   playBtn: requireEl('playBtn'),
   openSkinsBtn: requireEl('openSkinsBtn'),
-
   skinsBackBtn: requireEl('skinsBackBtn'),
   skinPrevBtn: requireEl('skinPrevBtn'),
   skinNextBtn: requireEl('skinNextBtn'),
   skinSelectBtn: requireEl('skinSelectBtn'),
+  closeTutorialBtn: requireEl('closeTutorialBtn'),
+
+  menuCoins: requireEl('menuCoins'),
+  bestScore: requireEl('bestScore'),
+  nameInput: requireEl('nameInput'),
+  heroCube: requireEl('heroCube'),
+
   skinPreviewCube: requireEl('skinPreviewCube'),
   skinName: requireEl('skinName'),
-  skinStatus: requireEl('skinStatus'),
+  skinRequirement: requireEl('skinRequirement'),
 
   coinValue: requireEl('coinValue'),
   scoreValue: requireEl('scoreValue'),
@@ -71,65 +73,11 @@ async function ensureThree() {
   return THREE;
 }
 
-const mmCtx = ui.miniMap.getContext('2d');
-const isTouch = matchMedia('(pointer: coarse)').matches;
-const profileKey = 'tralala_profile_v2';
-
-const state = {
-  keys: new Set(),
-  socket: null,
-  started: false,
-  myId: null,
-  myName: 'Guest',
-  skinIndex: 0,
-  previewSkinIndex: 0,
-  players: new Map(),
-  remotes: new Map(),
-  leaderboard: [],
-  entities: [],
-  local: null,
-  owners: new Int16Array(TOTAL).fill(NONE),
-  trailOwners: new Int16Array(TOTAL).fill(NONE),
-  gridMesh: null,
-  trailMeshes: new Map(),
-  dirtyColors: true,
-  dirtyTrails: true,
-  lastStatsEmit: 0,
-  profile: { coins: 0, bestArea: 0, bestScore: 0, bestName: 'Guest', skinIndex: 0 },
-  joystick: { active: false, x: 0, y: 0 },
-  tutorialShown: false,
-};
-
-function sanitizeName(name) {
-  const clean = String(name || '').replace(/[^a-zA-Z0-9 _-]/g, '').trim().slice(0, 16);
-  return clean || 'Guest';
-}
-
-function loadProfile() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(profileKey) || '{}');
-    state.profile.coins = Math.max(0, Number(parsed.coins) || 0);
-    state.profile.bestArea = Math.max(0, Number(parsed.bestArea) || 0);
-    state.profile.bestScore = Math.max(0, Number(parsed.bestScore) || 0);
-    state.profile.bestName = sanitizeName(parsed.bestName || 'Guest');
-    state.profile.skinIndex = Math.max(0, Number(parsed.skinIndex) || 0);
-    state.skinIndex = state.profile.skinIndex;
-    state.previewSkinIndex = state.skinIndex;
-    ui.nameInput.value = state.profile.bestName;
-  } catch {
-    // ignore malformed local storage
-  }
-}
-
-function saveProfile() {
-  localStorage.setItem(profileKey, JSON.stringify(state.profile));
-}
-
 function onPress(el, handler) {
   let last = 0;
   const run = (e) => {
     const now = performance.now();
-    if (now - last < 260) return;
+    if (now - last < 220) return;
     last = now;
     if (e) e.preventDefault();
     handler();
@@ -140,63 +88,52 @@ function onPress(el, handler) {
   });
 }
 
+function sanitizeName(name) {
+  const clean = String(name || '').replace(/[^a-zA-Z0-9 _-]/g, '').trim().slice(0, 16);
+  return clean || 'Guest';
+}
+
+function hexColor(v) { return `#${v.toString(16).padStart(6, '0')}`; }
 function idx(x, y) { return y * GRID + x; }
 function inBounds(x, y) { return x >= 0 && y >= 0 && x < GRID && y < GRID; }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-function isSkinUnlocked(i) {
-  const req = SKINS[i].requirement;
-  if (req.type === 'none') return true;
-  if (req.type === 'area') return state.profile.bestArea >= req.value;
-  if (req.type === 'score') return state.profile.bestScore >= req.value;
-  return false;
-}
+const mmCtx = ui.miniMap.getContext('2d');
+const isTouch = matchMedia('(pointer: coarse)').matches;
 
-function scoreOf(entity) {
-  return entity.kills * 30 + entity.coins + Math.floor((entity.area / TOTAL) * 100 * 3);
-}
+const state = {
+  started: false,
+  myName: 'Guest',
+  myId: null,
+  skinIndex: 0,
+  previewSkinIndex: 0,
+  keys: new Set(),
+  socket: null,
+  players: new Map(),
+  remotes: new Map(),
+  leaderboard: [],
+  local: null,
+  entities: [],
+  owners: new Int16Array(TOTAL).fill(NONE),
+  trailOwners: new Int16Array(TOTAL).fill(NONE),
+  trailMeshes: new Map(),
+  gridMesh: null,
+  dirtyColors: true,
+  dirtyTrails: true,
+  lastStatsEmit: 0,
+  tutorialSeen: false,
+  profile: { coins: 0, bestScore: 0, bestArea: 0, name: 'Guest', skinIndex: 0 },
+  joystick: { active: false, x: 0, y: 0 },
+};
 
-function hexColor(v) { return `#${v.toString(16).padStart(6, '0')}`; }
-
-function setCubeStyle(el, skin) {
-  el.style.background = `linear-gradient(145deg, #fff0a6, ${hexColor(skin.color)})`;
-}
-
-function refreshMenuStats() {
-  ui.menuCoinValue.textContent = String(state.profile.coins);
-  ui.bestScoreValue.textContent = String(Math.floor(state.profile.bestScore));
-}
-
-function showMenu() {
-  ui.menuScreen.classList.remove('hidden');
-  ui.skinsScreen.classList.add('hidden');
-  ui.gameHud.classList.add('hidden');
-  ui.tutorialCard.classList.add('hidden');
-  setCubeStyle(ui.heroCube, SKINS[state.skinIndex]);
-  refreshMenuStats();
-}
-
-function showGameUI() {
-  ui.menuScreen.classList.add('hidden');
-  ui.skinsScreen.classList.add('hidden');
-  ui.gameHud.classList.remove('hidden');
-}
-
-function showSkins() {
-  ui.menuScreen.classList.add('hidden');
-  ui.skinsScreen.classList.remove('hidden');
-  updateSkinPreview();
-}
-
-function updateSkinPreview() {
-  const skin = SKINS[state.previewSkinIndex];
-  const unlocked = isSkinUnlocked(state.previewSkinIndex);
-  setCubeStyle(ui.skinPreviewCube, skin);
-  ui.skinName.textContent = skin.id;
-  ui.skinStatus.textContent = unlocked ? 'Unlocked' : `Locked · ${skin.requirement.text}`;
-  ui.skinSelectBtn.disabled = !unlocked;
-  ui.skinSelectBtn.style.opacity = unlocked ? '1' : '.5';
-}
+let renderer = null;
+let scene = null;
+let camera = null;
+let clock = null;
+let colorTimer = 0;
+let trailTimer = 0;
+let hudTimer = 0;
+let mapTimer = 0;
 
 function cellCenter(x, y) {
   return new THREE.Vector3(-HALF + x * CELL + CELL / 2, 0, -HALF + y * CELL + CELL / 2);
@@ -209,45 +146,147 @@ function worldToCell(pos) {
   };
 }
 
-function createAvatar(skin, scale = 1) {
-  const g = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: skin.color, roughness: 0.38, metalness: 0.08 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.18 * scale, 1.18 * scale, 1.18 * scale), mat);
-  body.position.y = 0.84 * scale;
-  const shadowBase = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.44 * scale, 0.52 * scale, 0.18 * scale, 10),
-    new THREE.MeshStandardMaterial({ color: 0x12373d })
-  );
-  shadowBase.position.y = 0.09 * scale;
-  g.add(body, shadowBase);
-  scene.add(g);
-  return g;
+function loadProfile() {
+  try {
+    const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+    state.profile.coins = Math.max(0, Number(p.coins) || 0);
+    state.profile.bestScore = Math.max(0, Number(p.bestScore) || 0);
+    state.profile.bestArea = Math.max(0, Number(p.bestArea) || 0);
+    state.profile.name = sanitizeName(p.name || 'Guest');
+    state.profile.skinIndex = Math.max(0, Number(p.skinIndex) || 0);
+    state.myName = state.profile.name;
+    state.skinIndex = state.profile.skinIndex % SKINS.length;
+    state.previewSkinIndex = state.skinIndex;
+    ui.nameInput.value = state.myName;
+  } catch {
+    // ignore
+  }
 }
 
-function makeEntity(data) {
-  const skin = SKINS[data.skinIndex % SKINS.length];
+function saveProfile() {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+}
+
+function isSkinUnlocked(i) {
+  const req = SKINS[i].requirement;
+  if (req.type === 'none') return true;
+  if (req.type === 'area') return state.profile.bestArea >= req.value;
+  if (req.type === 'score') return state.profile.bestScore >= req.value;
+  return false;
+}
+
+function scoreOf(entity) {
+  return entity.kills * 30 + entity.coins + Math.floor((entity.area / TOTAL) * 300);
+}
+
+function setCubeStyle(el, skin) {
+  el.style.background = `linear-gradient(145deg, #fff2ae, ${hexColor(skin.color)})`;
+}
+
+function showMenu() {
+  ui.menuScreen.classList.remove('hidden');
+  ui.skinsScreen.classList.add('hidden');
+  ui.gameHud.classList.add('hidden');
+  ui.settingsSheet.classList.add('hidden');
+  ui.tutorialCard.classList.add('hidden');
+  ui.menuCoins.textContent = String(state.profile.coins);
+  ui.bestScore.textContent = String(Math.floor(state.profile.bestScore));
+  setCubeStyle(ui.heroCube, SKINS[state.skinIndex]);
+}
+
+function showSkins() {
+  ui.menuScreen.classList.add('hidden');
+  ui.skinsScreen.classList.remove('hidden');
+  ui.gameHud.classList.add('hidden');
+  updateSkinPreview();
+}
+
+function showGameHUD() {
+  ui.menuScreen.classList.add('hidden');
+  ui.skinsScreen.classList.add('hidden');
+  ui.gameHud.classList.remove('hidden');
+}
+
+function updateSkinPreview() {
+  const skin = SKINS[state.previewSkinIndex];
+  const unlocked = isSkinUnlocked(state.previewSkinIndex);
+  setCubeStyle(ui.skinPreviewCube, skin);
+  ui.skinName.textContent = skin.id;
+  ui.skinRequirement.textContent = unlocked ? 'Unlocked' : `Locked · ${skin.requirement.text}`;
+  ui.skinSelectBtn.disabled = !unlocked;
+  ui.skinSelectBtn.style.opacity = unlocked ? '1' : '.55';
+}
+
+function connectSocket() {
+  if (typeof io !== 'function') return;
+  if (state.socket) return;
+  state.socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
+
+  state.socket.on('connect', () => {
+    state.myId = state.socket.id;
+    state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
+  });
+
+  state.socket.on('snapshot', ({ players }) => {
+    state.players.clear();
+    players.forEach((p) => state.players.set(p.id, p));
+  });
+
+  state.socket.on('leaderboard', ({ rows }) => {
+    state.leaderboard = rows;
+  });
+
+  state.socket.on('server_full', () => {
+    state.started = false;
+    showMenu();
+    ui.settingsSheet.classList.remove('hidden');
+    ui.settingsSheet.querySelector('h3').textContent = 'Lobby is full';
+  });
+}
+
+function createAvatar(skin, scale = 1) {
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2 * scale, 1.2 * scale, 1.2 * scale),
+    new THREE.MeshStandardMaterial({ color: skin.color, roughness: 0.35, metalness: 0.1 })
+  );
+  body.position.y = 0.85 * scale;
+
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.4 * scale, 0.48 * scale, 0.18 * scale, 10),
+    new THREE.MeshStandardMaterial({ color: 0x123841 })
+  );
+  base.position.y = 0.09;
+
+  group.add(body, base);
+  scene.add(group);
+  return group;
+}
+
+function makeEntity({ id, name, skinIndex, isPlayer = false, npc = false }) {
+  const skin = SKINS[skinIndex % SKINS.length];
   return {
-    id: data.id,
-    name: data.name,
-    skinIndex: data.skinIndex,
+    id,
+    name,
     skin,
-    isPlayer: !!data.isPlayer,
-    npc: !!data.npc,
-    speed: data.isPlayer ? 9.6 : 8.1 + Math.random() * 1.6,
+    skinIndex,
+    isPlayer,
+    npc,
+    speed: isPlayer ? 9.6 : 8 + Math.random() * 1.5,
     dir: Math.random() * Math.PI * 2,
     kills: 0,
     coins: 0,
-    deaths: 0,
     lives: 3,
+    deaths: 0,
     area: 0,
     trail: [],
-    body: createAvatar(skin, data.isPlayer ? 1 : 0.9),
+    body: createAvatar(skin, isPlayer ? 1 : 0.9),
     home: { x: 0, y: 0 },
     aiTick: 0,
   };
 }
 
-function clearTrailsAndTerritory(id) {
+function clearEntityMap(id) {
   for (let i = 0; i < TOTAL; i++) {
     if (state.owners[i] === id) state.owners[i] = NONE;
     if (state.trailOwners[i] === id) state.trailOwners[i] = NONE;
@@ -255,12 +294,10 @@ function clearTrailsAndTerritory(id) {
 }
 
 function spawnArea(entity, cx, cy, radius = 2) {
-  entity.home.x = cx;
-  entity.home.y = cy;
+  entity.home = { x: cx, y: cy };
   for (let y = cy - radius; y <= cy + radius; y++) {
     for (let x = cx - radius; x <= cx + radius; x++) {
-      if (!inBounds(x, y)) continue;
-      state.owners[idx(x, y)] = entity.id;
+      if (inBounds(x, y)) state.owners[idx(x, y)] = entity.id;
     }
   }
   const p = cellCenter(cx, cy);
@@ -268,7 +305,8 @@ function spawnArea(entity, cx, cy, radius = 2) {
 }
 
 function setupRound() {
-  if (!scene) throw new Error('Scene is not initialized.');
+  if (!scene) throw new Error('Scene not initialized');
+
   state.entities.forEach((e) => scene.remove(e.body));
   state.entities.length = 0;
   state.owners.fill(NONE);
@@ -296,17 +334,23 @@ function setupRound() {
   state.dirtyColors = true;
   state.dirtyTrails = true;
 
-  if (!state.tutorialShown) {
+  const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
+  state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
+  state.dirtyColors = true;
+  state.dirtyTrails = true;
+
+  if (!state.tutorialSeen) {
+    state.tutorialSeen = true;
     ui.tutorialCard.classList.remove('hidden');
-    state.tutorialShown = true;
   }
 }
 
 function buildGridMesh() {
-  const geo = new THREE.BoxGeometry(CELL * 0.96, 0.34, CELL * 0.96);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x6aa6a8, roughness: 0.92, metalness: 0.02 });
+  const geo = new THREE.BoxGeometry(CELL * 0.96, 0.35, CELL * 0.96);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x76b1b5, roughness: 0.94, metalness: 0.02 });
   const mesh = new THREE.InstancedMesh(geo, mat, TOTAL);
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
   const tmp = new THREE.Object3D();
   let i = 0;
   for (let y = 0; y < GRID; y++) {
@@ -315,7 +359,7 @@ function buildGridMesh() {
       tmp.position.set(p.x, 0, p.z);
       tmp.updateMatrix();
       mesh.setMatrixAt(i, tmp.matrix);
-      mesh.setColorAt(i, new THREE.Color(0x7ab2b4));
+      mesh.setColorAt(i, new THREE.Color(0x76b1b5));
       i++;
     }
   }
@@ -324,11 +368,11 @@ function buildGridMesh() {
 }
 
 function paintGrid() {
-  if (!state.dirtyColors) return;
+  if (!state.dirtyColors || !state.gridMesh) return;
   for (let i = 0; i < TOTAL; i++) {
     const owner = state.owners[i];
-    const c = owner === NONE ? 0x7ab2b4 : (state.entities[owner]?.skin.color || 0x7ab2b4);
-    state.gridMesh.setColorAt(i, new THREE.Color(c));
+    const color = owner === NONE ? 0x76b1b5 : (state.entities[owner]?.skin.color ?? 0x76b1b5);
+    state.gridMesh.setColorAt(i, new THREE.Color(color));
   }
   state.gridMesh.instanceColor.needsUpdate = true;
   state.dirtyColors = false;
@@ -338,27 +382,34 @@ function paintTrails() {
   if (!state.dirtyTrails) return;
   state.trailMeshes.forEach((m) => scene.remove(m));
   state.trailMeshes.clear();
+
   for (let i = 0; i < TOTAL; i++) {
     const owner = state.trailOwners[i];
     if (owner === NONE) continue;
+
     const x = i % GRID;
     const y = Math.floor(i / GRID);
     const p = cellCenter(x, y);
-    const skin = state.entities[owner].skin;
-    const m = new THREE.Mesh(
+    const skin = state.entities[owner]?.skin;
+    if (!skin) continue;
+
+    const trail = new THREE.Mesh(
       new THREE.BoxGeometry(CELL * 0.56, 0.58, CELL * 0.56),
-      new THREE.MeshStandardMaterial({ color: skin.trail, emissive: skin.trail, emissiveIntensity: 0.52 })
+      new THREE.MeshStandardMaterial({ color: skin.trail, emissive: skin.trail, emissiveIntensity: 0.5 })
     );
-    m.position.set(p.x, 0.45, p.z);
-    state.trailMeshes.set(i, m);
-    scene.add(m);
+    trail.position.set(p.x, 0.45, p.z);
+    scene.add(trail);
+    state.trailMeshes.set(i, trail);
   }
   state.dirtyTrails = false;
 }
 
 function closeLoop(entity) {
   if (entity.trail.length < 2) {
-    entity.trail.forEach((i) => { state.owners[i] = entity.id; state.trailOwners[i] = NONE; });
+    entity.trail.forEach((i) => {
+      state.owners[i] = entity.id;
+      state.trailOwners[i] = NONE;
+    });
     entity.trail.length = 0;
     state.dirtyColors = true;
     state.dirtyTrails = true;
@@ -391,14 +442,17 @@ function closeLoop(entity) {
     }
   }
 
-  entity.trail.forEach((i) => { state.owners[i] = entity.id; state.trailOwners[i] = NONE; });
+  entity.trail.forEach((i) => {
+    state.owners[i] = entity.id;
+    state.trailOwners[i] = NONE;
+  });
   entity.trail.length = 0;
   state.dirtyColors = true;
   state.dirtyTrails = true;
 }
 
 function respawn(entity) {
-  clearTrailsAndTerritory(entity.id);
+  clearEntityMap(entity.id);
   entity.trail.length = 0;
   const rx = Math.floor(6 + Math.random() * (GRID - 12));
   const ry = Math.floor(6 + Math.random() * (GRID - 12));
@@ -415,25 +469,24 @@ function finishRound() {
   state.profile.coins += me.coins;
   state.profile.bestArea = Math.max(state.profile.bestArea, areaPct);
   state.profile.bestScore = Math.max(state.profile.bestScore, score);
-  state.profile.bestName = state.myName;
+  state.profile.name = state.myName;
   state.profile.skinIndex = state.skinIndex;
   saveProfile();
-  refreshMenuStats();
+  state.started = false;
   showMenu();
 }
 
 function killEntity(victim, killer) {
   if (!victim || !killer) return;
   if (killer.isPlayer) {
-    killer.coins += 8;
     killer.kills += 1;
+    killer.coins += 8;
   }
   if (victim.isPlayer) {
-    victim.deaths += 1;
     victim.lives -= 1;
+    victim.deaths += 1;
     if (victim.lives <= 0) {
-      state.started = false;
-      if (state.socket) state.socket.emit('leave_game');
+      if (state.socket?.connected) state.socket.emit('leave_game');
       finishRound();
       return;
     }
@@ -455,6 +508,11 @@ function stepEntity(entity) {
     }
   } else if (entity.trail.length > 0) {
     closeLoop(entity);
+  }
+
+  const trailOwner = state.trailOwners[i];
+  if (trailOwner !== NONE && trailOwner !== entity.id) {
+    killEntity(state.entities[trailOwner], entity);
   }
 
   const trailOwner = state.trailOwners[i];
@@ -491,13 +549,13 @@ function nearestEnemyTrail(entity, radius = 10) {
 
 function updateNpc(npc, dt, t) {
   const c = worldToCell(npc.body.position);
-  const meHome = cellCenter(npc.home.x, npc.home.y);
   const inOwn = state.owners[idx(c.x, c.y)] === npc.id;
+  const homePos = cellCenter(npc.home.x, npc.home.y);
 
   if (t > npc.aiTick) {
     npc.aiTick = t + 0.35 + Math.random() * 0.8;
     if (!inOwn && npc.trail.length > 10) {
-      npc.dir = Math.atan2(meHome.x - npc.body.position.x, meHome.z - npc.body.position.z) + (Math.random() - 0.5) * 0.2;
+      npc.dir = Math.atan2(homePos.x - npc.body.position.x, homePos.z - npc.body.position.z) + (Math.random() - 0.5) * 0.2;
     } else {
       const enemy = nearestEnemyTrail(npc, 9);
       if (enemy) npc.dir = Math.atan2(enemy.x - npc.body.position.x, enemy.z - npc.body.position.z);
@@ -507,7 +565,6 @@ function updateNpc(npc, dt, t) {
 
   npc.body.position.x += Math.sin(npc.dir) * npc.speed * dt;
   npc.body.position.z += Math.cos(npc.dir) * npc.speed * dt;
-  if (Math.abs(npc.body.position.x) > HALF - 1 || Math.abs(npc.body.position.z) > HALF - 1) npc.dir += Math.PI * 0.66;
   npc.body.position.x = clamp(npc.body.position.x, -HALF + 1, HALF - 1);
   npc.body.position.z = clamp(npc.body.position.z, -HALF + 1, HALF - 1);
   npc.body.rotation.y = npc.dir;
@@ -515,6 +572,7 @@ function updateNpc(npc, dt, t) {
 }
 
 function joystickInput() {
+  if (!THREE) return { x: 0, y: 0, lengthSq: () => 0, normalize: () => ({ x: 0, y: 0 }) };
   const v = new THREE.Vector2(state.joystick.x, state.joystick.y);
   return v.lengthSq() > 0.01 ? v.normalize() : new THREE.Vector2(0, 0);
 }
@@ -531,14 +589,15 @@ function getInput() {
 
 function updatePlayer(dt) {
   const p = state.local;
-  const inVec = getInput();
-  if (inVec.lengthSq() > 0) p.dir = Math.atan2(inVec.x, inVec.y);
+  const input = getInput();
+  if (input.lengthSq() > 0) p.dir = Math.atan2(input.x, input.y);
 
   p.body.position.x += Math.sin(p.dir) * p.speed * dt;
   p.body.position.z += Math.cos(p.dir) * p.speed * dt;
   p.body.position.x = clamp(p.body.position.x, -HALF + 1, HALF - 1);
   p.body.position.z = clamp(p.body.position.z, -HALF + 1, HALF - 1);
   p.body.rotation.y = p.dir;
+
   stepEntity(p);
 
   if (state.socket?.connected) {
@@ -547,7 +606,7 @@ function updatePlayer(dt) {
 }
 
 function updateArea() {
-  state.entities.forEach((e) => (e.area = 0));
+  state.entities.forEach((e) => { e.area = 0; });
   for (let i = 0; i < TOTAL; i++) {
     const owner = state.owners[i];
     if (owner !== NONE && state.entities[owner]) state.entities[owner].area += 1;
@@ -558,7 +617,7 @@ function drawMinimap() {
   const w = ui.miniMap.width;
   const h = ui.miniMap.height;
   mmCtx.clearRect(0, 0, w, h);
-  mmCtx.fillStyle = '#0f2f35';
+  mmCtx.fillStyle = '#0d2f34';
   mmCtx.fillRect(0, 0, w, h);
 
   const pixel = w / GRID;
@@ -574,9 +633,9 @@ function drawMinimap() {
   state.players.forEach((p) => {
     const x = ((p.x + HALF) / (GRID * CELL)) * w;
     const y = ((p.z + HALF) / (GRID * CELL)) * h;
-    mmCtx.fillStyle = p.id === state.myId ? '#ffffff' : '#ffe386';
+    mmCtx.fillStyle = p.id === state.myId ? '#ffffff' : '#ffe58f';
     mmCtx.beginPath();
-    mmCtx.arc(x, y, p.id === state.myId ? 3.5 : 2.4, 0, Math.PI * 2);
+    mmCtx.arc(x, y, p.id === state.myId ? 3.5 : 2.3, 0, Math.PI * 2);
     mmCtx.fill();
   });
 }
@@ -584,14 +643,13 @@ function drawMinimap() {
 function updateRemoteVisuals() {
   state.players.forEach((p, id) => {
     if (id === state.myId) return;
-    let v = state.remotes.get(id);
-    if (!v) {
-      const skin = SKINS[p.skinIndex % SKINS.length];
-      v = createAvatar(skin, 0.95);
-      state.remotes.set(id, v);
+    let mesh = state.remotes.get(id);
+    if (!mesh) {
+      mesh = createAvatar(SKINS[p.skinIndex % SKINS.length], 0.95);
+      state.remotes.set(id, mesh);
     }
-    v.position.lerp(new THREE.Vector3(p.x, 0, p.z), 0.28);
-    v.rotation.y = THREE.MathUtils.lerp(v.rotation.y, p.rot || 0, 0.22);
+    mesh.position.lerp(new THREE.Vector3(p.x, 0, p.z), 0.28);
+    mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, p.rot || 0, 0.22);
   });
 
   state.remotes.forEach((mesh, id) => {
@@ -609,20 +667,23 @@ function renderHUD() {
   const areaPct = (me.area / TOTAL) * 100;
   const score = scoreOf(me);
 
-  ui.coinValue.textContent = `${state.profile.coins + me.coins}`;
-  ui.scoreValue.textContent = `${score}`;
+  ui.coinValue.textContent = String(state.profile.coins + me.coins);
+  ui.scoreValue.textContent = String(score);
   ui.areaValue.textContent = `${areaPct.toFixed(1)}%`;
   ui.playerName.textContent = state.myName;
   ui.livesValue.textContent = '❤'.repeat(Math.max(0, me.lives));
 
   const rows = [...state.leaderboard].slice(0, 6);
   ui.leaderboardList.innerHTML = '';
-  rows.forEach((r) => {
+  rows.forEach((row) => {
     const li = document.createElement('li');
-    const color = SKINS[r.skinIndex % SKINS.length]?.color || 0xffffff;
-    li.innerHTML = `<span style="color:${hexColor(color)}">■</span> ${r.name}${r.id === state.myId ? ' (You)' : ''} ${r.area.toFixed(1)}%`;
+    const color = SKINS[row.skinIndex % SKINS.length]?.color ?? 0xffffff;
+    li.innerHTML = `<span style="color:${hexColor(color)}">■</span> ${row.name}${row.id === state.myId ? ' (You)' : ''} ${row.area.toFixed(1)}%`;
     ui.leaderboardList.appendChild(li);
   });
+
+  state.profile.bestArea = Math.max(state.profile.bestArea, areaPct);
+  state.profile.bestScore = Math.max(state.profile.bestScore, score);
 }
 
 function emitStats(t) {
@@ -637,42 +698,17 @@ function emitStats(t) {
   });
 }
 
-function connectSocket() {
-  if (typeof io !== 'function') return;
-  state.socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
-
-  state.socket.on('connect', () => {
-    state.myId = state.socket.id;
-    state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
-  });
-
-  state.socket.on('server_full', () => {
-    alert('Lobby is full (30/30). Try again.');
-    state.started = false;
-    showMenu();
-  });
-
-  state.socket.on('snapshot', ({ players }) => {
-    state.players.clear();
-    players.forEach((p) => state.players.set(p.id, p));
-  });
-
-  state.socket.on('leaderboard', ({ rows }) => {
-    state.leaderboard = rows;
-  });
-}
-
 function setupUIHandlers() {
   onPress(ui.settingsBtn, () => ui.settingsSheet.classList.remove('hidden'));
   onPress(ui.settingsCloseBtn, () => ui.settingsSheet.classList.add('hidden'));
-
-  onPress(ui.openSkinsBtn, showSkins);
-  onPress(ui.skinsBackBtn, showMenu);
+  onPress(ui.openSkinsBtn, () => showSkins());
+  onPress(ui.skinsBackBtn, () => showMenu());
 
   onPress(ui.skinPrevBtn, () => {
     state.previewSkinIndex = (state.previewSkinIndex - 1 + SKINS.length) % SKINS.length;
     updateSkinPreview();
   });
+
   onPress(ui.skinNextBtn, () => {
     state.previewSkinIndex = (state.previewSkinIndex + 1) % SKINS.length;
     updateSkinPreview();
@@ -692,23 +728,22 @@ function setupUIHandlers() {
     try {
       await ensureThree();
       if (!renderer) init3D();
-    } catch (e) {
-      console.error('Failed to load 3D engine', e);
+    } catch {
       ui.settingsSheet.classList.remove('hidden');
-      const title = ui.settingsSheet.querySelector('h3');
-      if (title) title.textContent = 'Could not load 3D engine';
+      ui.settingsSheet.querySelector('h3').textContent = 'Could not load 3D engine';
       return;
     }
 
     state.myName = sanitizeName(ui.nameInput.value);
-    state.profile.bestName = state.myName;
+    state.profile.name = state.myName;
     saveProfile();
+
     state.started = true;
-    showGameUI();
+    showGameHUD();
     setupRound();
 
-    if (!state.socket) connectSocket();
-    else if (state.socket.connected) state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
+    connectSocket();
+    if (state.socket?.connected) state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
   });
 
   function resetJoystick() {
@@ -732,7 +767,7 @@ function setupControls() {
     return;
   }
 
-  const center = { x: 63, y: 63 };
+  const center = { x: 62, y: 62 };
   const maxDist = 34;
 
   function setKnob(dx, dy) {
@@ -743,8 +778,8 @@ function setupControls() {
       nx = (dx / len) * maxDist;
       ny = (dy / len) * maxDist;
     }
-    ui.joyKnob.style.left = `${36 + nx}px`;
-    ui.joyKnob.style.top = `${36 + ny}px`;
+    ui.joyKnob.style.left = `${35 + nx}px`;
+    ui.joyKnob.style.top = `${35 + ny}px`;
     state.joystick.x = nx / maxDist;
     state.joystick.y = ny / maxDist;
   }
@@ -762,26 +797,17 @@ function setupControls() {
     setKnob(e.clientX - rect.left - center.x, e.clientY - rect.top - center.y);
   });
 
-  function resetJoystick() {
+  function resetJoy() {
     state.joystick.active = false;
     state.joystick.x = 0;
     state.joystick.y = 0;
-    ui.joyKnob.style.left = '36px';
-    ui.joyKnob.style.top = '36px';
+    ui.joyKnob.style.left = '35px';
+    ui.joyKnob.style.top = '35px';
   }
 
-  ui.joyBase.addEventListener('pointerup', resetJoystick);
-  ui.joyBase.addEventListener('pointercancel', resetJoystick);
+  ui.joyBase.addEventListener('pointerup', resetJoy);
+  ui.joyBase.addEventListener('pointercancel', resetJoy);
 }
-
-let renderer = null;
-let scene = null;
-let camera = null;
-let clock = null;
-let colorTimer = 0;
-let trailTimer = 0;
-let hudTimer = 0;
-let mapTimer = 0;
 
 function init3D() {
   if (renderer) return;
@@ -792,36 +818,35 @@ function init3D() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x6da5a8);
-  scene.fog = new THREE.Fog(0x6da5a8, 40, 150);
+  scene.background = new THREE.Color(0x2f7075);
+  scene.fog = new THREE.Fog(0x2f7075, 42, 150);
 
   camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 500);
   camera.position.set(0, 16, 14);
 
-  scene.add(new THREE.HemisphereLight(0xd7ffff, 0x19444c, 1.08));
-  const sun = new THREE.DirectionalLight(0xfff1c3, 1.35);
-  sun.position.set(38, 62, 20);
+  scene.add(new THREE.HemisphereLight(0xd6ffff, 0x1b4b53, 1.06));
+  const sun = new THREE.DirectionalLight(0xfff2bf, 1.3);
+  sun.position.set(38, 62, 22);
   scene.add(sun);
 
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(GRID * CELL + 120, GRID * CELL + 120),
-    new THREE.MeshStandardMaterial({ color: 0x367478, roughness: 1 })
+    new THREE.MeshStandardMaterial({ color: 0x2f6d73, roughness: 1 })
   );
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  const borderRing = new THREE.Mesh(
+  const ring = new THREE.Mesh(
     new THREE.RingGeometry(HALF + 2, HALF + 10, 80),
-    new THREE.MeshBasicMaterial({ color: 0x031013, side: THREE.DoubleSide, transparent: true, opacity: 0.78 })
+    new THREE.MeshBasicMaterial({ color: 0x041215, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
   );
-  borderRing.rotation.x = -Math.PI / 2;
-  borderRing.position.y = 0.03;
-  scene.add(borderRing);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.03;
+  scene.add(ring);
 
   state.gridMesh = buildGridMesh();
 
   window.addEventListener('resize', () => {
-    if (!renderer || !camera) return;
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -869,10 +894,9 @@ function animate() {
 loadProfile();
 setupUIHandlers();
 setupControls();
-refreshMenuStats();
-setCubeStyle(ui.heroCube, SKINS[state.skinIndex]);
-updateSkinPreview();
 showMenu();
+updateSkinPreview();
+
 ensureThree().then(() => init3D()).catch(() => {
-  console.warn('3D engine preload failed, UI still available.');
+  // UI still usable even if engine preload fails.
 });
