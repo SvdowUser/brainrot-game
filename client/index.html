@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Los Tralaleritos Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>tralala.io</title>
   <link rel="stylesheet" href="./style.css" />
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
@@ -11,62 +11,64 @@
   <canvas id="scene"></canvas>
 
   <div id="hudRoot">
-    <div id="topBar">
-      <div class="portrait-card">
-        <div id="portraitFrame">
-          <canvas id="portraitCanvas" width="96" height="96"></canvas>
-        </div>
-        <div class="portrait-meta">
-          <div class="small-label">LOS TRALALERITOS HUB</div>
-          <div id="portraitName">Guest</div>
-          <div class="small-sub">Beach-01</div>
-        </div>
-      </div>
-
-      <div class="top-actions">
-        <div id="serverBadge">Beach-01 · 0/20</div>
-        <button id="settingsBtn" class="icon-btn" type="button">⚙</button>
-      </div>
+    <div id="coinPanel" class="glass">
+      <img id="coinIcon" src="./assets/ui/coin.png" alt="coin" />
+      <span id="coinFallback">🪙</span>
+      <span id="coinValue">0</span>
     </div>
 
-    <div id="settingsPanel" class="panel hidden">
-      <div class="panel-title">Controls</div>
-      <div class="panel-text">WASD / Arrow Keys: move</div>
-      <div class="panel-text">Space: jump</div>
-      <div class="panel-text">Enter: focus chat</div>
-      <div class="panel-text">Mouse drag / touch drag: camera</div>
-      <div class="panel-text">Mobile: joystick + jump button</div>
+    <div id="statsPanel" class="glass">
+      <div><strong>Player:</strong> <span id="playerName">Guest</span></div>
+      <div><strong>Kills:</strong> <span id="killsValue">0</span></div>
+      <div><strong>Deaths:</strong> <span id="deathsValue">0</span></div>
+      <div><strong>Lives:</strong> <span id="livesValue">3</span></div>
+      <div><strong>Area:</strong> <span id="areaValue">0%</span></div>
+      <div><strong>Lobby:</strong> <span id="lobbyValue">0/30</span></div>
     </div>
 
-    <div id="chatPanel" class="glass-panel">
-      <div id="chatLog"></div>
-      <div class="chat-row">
-        <input id="chatInput" type="text" maxlength="120" placeholder="Type a message..." autocomplete="off" />
-        <button id="chatSend" type="button">Send</button>
-      </div>
+    <div id="leaderboard" class="glass">
+      <div class="panelTitle">Leaderboard</div>
+      <ol id="leaderboardList"></ol>
     </div>
 
-    <div id="mobileControls">
-      <div id="joystickBase"><div id="joystickKnob"></div></div>
-      <button id="jumpBtn" type="button">Jump</button>
+    <div id="miniMapWrap" class="glass">
+      <div class="panelTitle">Mini Map</div>
+      <canvas id="miniMap" width="180" height="180"></canvas>
     </div>
 
-    <div id="overlayLabels"></div>
+    <div id="mobileJoystick" aria-hidden="true">
+      <div id="joyBase"><div id="joyKnob"></div></div>
+    </div>
 
     <div id="startOverlay">
-      <div class="start-card">
-        <div class="start-title">Enter the hub</div>
-        <div class="start-subtitle">Choose a guest name and starter skin.</div>
-        <input id="nameInput" type="text" maxlength="16" placeholder="Choose a name" autocomplete="off" />
+      <div class="startCard glass">
+        <h1>tralala.io</h1>
+        <p>Capture territory, survive 3 lives, and unlock skins.</p>
 
-        <div class="skin-selector">
-          <button id="skinPrev" class="skin-arrow" type="button">‹</button>
-          <div id="skinCardWrap"></div>
-          <button id="skinNext" class="skin-arrow" type="button">›</button>
+        <div class="heroPreview">
+          <div id="heroCube"></div>
         </div>
 
-        <div id="skinStatus">Starter skin 1 / 3</div>
-        <button id="enterBtn" class="enter-btn" type="button">Enter hub</button>
+        <label for="nameInput">Nickname</label>
+        <input id="nameInput" type="text" maxlength="16" placeholder="Your name" autocomplete="off" />
+
+        <button id="openSkinsBtn" type="button" class="secondaryBtn">Skins & Unlocks</button>
+
+        <button id="startBtn" type="button">Play</button>
+        <small>PNG placeholders: <code>client/assets/ui/coin.png</code> (64x64), <code>client/assets/ui/alert.png</code> (80x80).</small>
+      </div>
+
+      <div id="skinsOverlay" class="hidden">
+        <div class="skinsCard glass">
+          <h2>Skin Menu</h2>
+          <p>Select unlocked colors. Locked skins show progress.</p>
+          <div id="skinRow"></div>
+          <div id="skinRequirement"></div>
+          <div class="skinsActions">
+            <button id="closeSkinsBtn" type="button" class="secondaryBtn">Back</button>
+            <button id="selectSkinBtn" type="button">Select</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
