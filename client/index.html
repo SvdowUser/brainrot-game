@@ -10,72 +10,83 @@
 <body>
   <canvas id="scene"></canvas>
 
-  <div id="hudRoot">
-    <div id="coinPanel" class="glass">
-      <img id="coinIcon" src="./assets/ui/coin.png" alt="coin" />
-      <span id="coinFallback">🪙</span>
-      <span id="coinValue">0</span>
-    </div>
+  <div id="uiRoot">
+    <section id="menuScreen" class="screen active">
+      <div class="menuTopBar">
+        <button id="menuCoin" class="chip chipCoin" type="button" aria-label="Coins">
+          <span class="hexIcon"></span>
+          <span id="menuCoinValue">0</span>
+        </button>
+        <button id="settingsBtn" class="chip chipIcon" type="button" aria-label="Settings">⚙</button>
+      </div>
 
-    <div id="statsPanel" class="glass">
-      <div><strong>Player:</strong> <span id="playerName">Guest</span></div>
-      <div><strong>Kills:</strong> <span id="killsValue">0</span></div>
-      <div><strong>Deaths:</strong> <span id="deathsValue">0</span></div>
-      <div><strong>Lives:</strong> <span id="livesValue">3</span></div>
-      <div><strong>Area:</strong> <span id="areaValue">0%</span></div>
-      <div><strong>Lobby:</strong> <span id="lobbyValue">0/30</span></div>
-    </div>
-
-    <div id="leaderboard" class="glass">
-      <div class="panelTitle">Leaderboard</div>
-      <ol id="leaderboardList"></ol>
-    </div>
-
-    <div id="miniMapWrap" class="glass">
-      <div class="panelTitle">Mini Map</div>
-      <canvas id="miniMap" width="220" height="220"></canvas>
-    </div>
-
-    <div id="joystick" aria-label="joystick">
-      <div id="joyBase"><div id="joyStick"></div></div>
-    </div>
-
-    <div id="startOverlay">
-      <div class="startCard glass">
-        <div class="logoTitle">tralala.io</div>
-        <div class="coinRow">
-          <img class="coinSmall" src="./assets/ui/coin.png" alt="coin" />
-          <span id="menuCoins">0</span>
-        </div>
-
-        <div class="heroPreview">
+      <div class="menuCenter">
+        <h1 class="logo">tralala<span>.io</span></h1>
+        <div class="heroStage">
           <div id="heroCube"></div>
         </div>
 
-        <label for="nameInput">Nickname</label>
-        <input id="nameInput" type="text" maxlength="16" placeholder="Your name" autocomplete="off" />
-
-        <div id="bestBarWrap">
-          <div class="metaLabel">Best map control</div>
-          <div id="bestBar"><span id="bestFill"></span></div>
-          <div id="bestAreaText">0%</div>
+        <div class="profileRow">
+          <input id="nameInput" type="text" maxlength="16" placeholder="Nickname" autocomplete="off" />
+          <div class="bestScore">Best <span id="bestScoreValue">0</span></div>
         </div>
 
-        <div class="menuButtons">
-          <button id="skinsBtn" type="button" class="subBtn">Skins</button>
-          <button id="startBtn" type="button" class="playBtn">Play</button>
+        <button id="playBtn" class="ctaPlay" type="button">▶</button>
+        <button id="openSkinsBtn" class="ctaSub" type="button">Skins</button>
+      </div>
+    </section>
+
+    <section id="skinsScreen" class="screen hidden">
+      <div class="skinsHeader">
+        <button id="skinsBackBtn" class="smallBtn" type="button">Back</button>
+        <h2>Choose Skin</h2>
+      </div>
+
+      <div class="skinCarousel">
+        <button id="skinPrevBtn" class="navBtn" type="button">‹</button>
+        <div class="skinPreviewCard">
+          <div id="skinPreviewCube"></div>
+          <h3 id="skinName">SUN</h3>
+          <p id="skinStatus">Unlocked</p>
+        </div>
+        <button id="skinNextBtn" class="navBtn" type="button">›</button>
+      </div>
+
+      <div class="skinsActions">
+        <button id="skinSelectBtn" class="smallBtn primary" type="button">Select</button>
+      </div>
+    </section>
+
+    <section id="tutorialCard" class="tutorial hidden" role="dialog" aria-live="polite">
+      <button id="closeTutorialBtn" class="tutorialClose" type="button">✕</button>
+      <div class="tutorialIcon">🌀</div>
+      <p>Close a loop to expand your area.</p>
+    </section>
+
+    <section id="gameHud" class="hidden">
+      <div class="hudTopRow">
+        <div class="chip chipCoin"><span class="hexIcon"></span><span id="coinValue">0</span></div>
+        <div class="chip">Score <span id="scoreValue">0</span></div>
+        <div class="chip">Area <span id="areaValue">0%</span></div>
+      </div>
+
+      <div class="hudSide">
+        <div class="leaderboardCard">
+          <h3>Leaderboard</h3>
+          <ol id="leaderboardList"></ol>
+        </div>
+        <div class="playerCard">
+          <span id="playerName">Guest</span>
+          <span id="livesValue">❤❤❤</span>
         </div>
       </div>
 
-      <div id="skinOverlay" class="hidden">
-        <div class="skinCard glass">
-          <h2>Skin unlocks</h2>
-          <p>Unlock by area control or score milestones.</p>
-          <div id="skinRow"></div>
-          <button id="skinCloseBtn" type="button" class="subBtn">Back</button>
-        </div>
+      <canvas id="miniMap" width="124" height="124"></canvas>
+
+      <div id="mobileJoystick" aria-hidden="true">
+        <div id="joyBase"><div id="joyKnob"></div></div>
       </div>
-    </div>
+    </section>
   </div>
 
   <script type="module" src="./src/main.js"></script>
