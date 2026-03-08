@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
+let THREE = null;
 
 const SERVER_URL = window.location.hostname.includes('github.io')
   ? 'http://89.167.75.175:3000'
@@ -57,6 +57,12 @@ const ui = {
   joyBase: document.getElementById('joyBase'),
   joyKnob: document.getElementById('joyKnob'),
 };
+
+async function ensureThree() {
+  if (THREE) return THREE;
+  THREE = await import('https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js');
+  return THREE;
+}
 
 const mmCtx = ui.miniMap.getContext('2d');
 const isTouch = matchMedia('(pointer: coarse)').matches;
@@ -614,6 +620,7 @@ function emitStats(t) {
 }
 
 function connectSocket() {
+  if (typeof io !== 'function') return;
   state.socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
 
   state.socket.on('connect', () => {
@@ -663,7 +670,18 @@ function setupUIHandlers() {
 
   onPress(ui.closeTutorialBtn, () => ui.tutorialCard.classList.add('hidden'));
 
-  onPress(ui.playBtn, () => {
+  onPress(ui.playBtn, async () => {
+    try {
+      await ensureThree();
+      if (!renderer) init3D();
+    } catch (e) {
+      console.error('Failed to load 3D engine', e);
+      ui.settingsSheet.classList.remove('hidden');
+      const title = ui.settingsSheet.querySelector('h3');
+      if (title) title.textContent = 'Could not load 3D engine';
+      return;
+    }
+
     state.myName = sanitizeName(ui.nameInput.value);
     state.profile.bestName = state.myName;
     saveProfile();
@@ -674,6 +692,17 @@ function setupUIHandlers() {
     if (!state.socket) connectSocket();
     else if (state.socket.connected) state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
   });
+
+  function resetJoystick() {
+    state.joystick.active = false;
+    state.joystick.x = 0;
+    state.joystick.y = 0;
+    ui.joyKnob.style.left = '36px';
+    ui.joyKnob.style.top = '36px';
+  }
+
+  ui.joyBase.addEventListener('pointerup', resetJoystick);
+  ui.joyBase.addEventListener('pointercancel', resetJoystick);
 }
 
 function setupControls() {
@@ -727,45 +756,62 @@ function setupControls() {
   ui.joyBase.addEventListener('pointercancel', resetJoystick);
 }
 
-const renderer = new THREE.WebGLRenderer({ canvas: ui.scene, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+let renderer = null;
+let scene = null;
+let camera = null;
+let clock = null;
+let colorTimer = 0;
+let trailTimer = 0;
+let hudTimer = 0;
+let mapTimer = 0;
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x6da5a8);
-scene.fog = new THREE.Fog(0x6da5a8, 40, 150);
+function init3D() {
+  if (renderer) return;
 
-const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 500);
-camera.position.set(0, 16, 14);
-
-scene.add(new THREE.HemisphereLight(0xd7ffff, 0x19444c, 1.08));
-const sun = new THREE.DirectionalLight(0xfff1c3, 1.35);
-sun.position.set(38, 62, 20);
-scene.add(sun);
-
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(GRID * CELL + 120, GRID * CELL + 120),
-  new THREE.MeshStandardMaterial({ color: 0x367478, roughness: 1 })
-);
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
-
-const borderRing = new THREE.Mesh(
-  new THREE.RingGeometry(HALF + 2, HALF + 10, 80),
-  new THREE.MeshBasicMaterial({ color: 0x031013, side: THREE.DoubleSide, transparent: true, opacity: 0.78 })
-);
-borderRing.rotation.x = -Math.PI / 2;
-borderRing.position.y = 0.03;
-scene.add(borderRing);
-
-state.gridMesh = buildGridMesh();
-
-window.addEventListener('resize', () => {
+  renderer = new THREE.WebGLRenderer({ canvas: ui.scene, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-});
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x6da5a8);
+  scene.fog = new THREE.Fog(0x6da5a8, 40, 150);
+
+  camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(0, 16, 14);
+
+  scene.add(new THREE.HemisphereLight(0xd7ffff, 0x19444c, 1.08));
+  const sun = new THREE.DirectionalLight(0xfff1c3, 1.35);
+  sun.position.set(38, 62, 20);
+  scene.add(sun);
+
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(GRID * CELL + 120, GRID * CELL + 120),
+    new THREE.MeshStandardMaterial({ color: 0x367478, roughness: 1 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
+
+  const borderRing = new THREE.Mesh(
+    new THREE.RingGeometry(HALF + 2, HALF + 10, 80),
+    new THREE.MeshBasicMaterial({ color: 0x031013, side: THREE.DoubleSide, transparent: true, opacity: 0.78 })
+  );
+  borderRing.rotation.x = -Math.PI / 2;
+  borderRing.position.y = 0.03;
+  scene.add(borderRing);
+
+  state.gridMesh = buildGridMesh();
+
+  window.addEventListener('resize', () => {
+    if (!renderer || !camera) return;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+
+  clock = new THREE.Clock();
+  animate();
+}
 
 const clock = new THREE.Clock();
 let colorTimer = 0;
@@ -774,6 +820,8 @@ let hudTimer = 0;
 let mapTimer = 0;
 
 function animate() {
+  if (!renderer || !scene || !camera || !clock) return;
+
   const dt = Math.min(clock.getDelta(), 0.033);
   const t = clock.elapsedTime;
 
@@ -813,4 +861,6 @@ refreshMenuStats();
 setCubeStyle(ui.heroCube, SKINS[state.skinIndex]);
 updateSkinPreview();
 showMenu();
-animate();
+ensureThree().then(() => init3D()).catch(() => {
+  console.warn('3D engine preload failed, UI still available.');
+});
