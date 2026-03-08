@@ -1,10 +1,8 @@
-# UI assets (replaceable)
+# UI PNG placeholders
 
-Lege hier deine austauschbaren PNG-Icons ab.
+You can replace these files with your own PNG icons:
 
-Empfohlene Dateien:
+- `coin.png` (recommended `64x64`, transparent background) – shown in the top-left coin counter with spin animation.
+- `alert.png` (recommended `80x80`, transparent background) – reserved for warning/notification badge usage.
 
-- `coin.png` (wird im HUD oben links verwendet)
-- später optional: `heart.png`, `logo.png`, `minimap-frame.png`
-
-Wenn `coin.png` fehlt, nutzt die UI automatisch ein Emoji-Fallback.
+If a PNG is missing, the UI falls back to emoji placeholders.

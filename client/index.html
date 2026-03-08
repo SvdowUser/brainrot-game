@@ -18,42 +18,57 @@
     </div>
 
     <div id="statsPanel" class="glass">
-      <div><strong>Spieler:</strong> <span id="playerName">Guest</span></div>
+      <div><strong>Player:</strong> <span id="playerName">Guest</span></div>
       <div><strong>Kills:</strong> <span id="killsValue">0</span></div>
-      <div><strong>Leben:</strong> <span id="livesValue">3</span></div>
-      <div><strong>Fläche:</strong> <span id="areaValue">0%</span></div>
+      <div><strong>Deaths:</strong> <span id="deathsValue">0</span></div>
+      <div><strong>Lives:</strong> <span id="livesValue">3</span></div>
+      <div><strong>Area:</strong> <span id="areaValue">0%</span></div>
       <div><strong>Lobby:</strong> <span id="lobbyValue">0/30</span></div>
+    </div>
+
+    <div id="leaderboard" class="glass">
+      <div class="panelTitle">Leaderboard</div>
+      <ol id="leaderboardList"></ol>
     </div>
 
     <div id="miniMapWrap" class="glass">
       <div class="panelTitle">Mini Map</div>
-      <canvas id="miniMap" width="280" height="280"></canvas>
+      <canvas id="miniMap" width="180" height="180"></canvas>
     </div>
 
-    <div id="leaderboard" class="glass">
-      <div class="panelTitle">Bestenliste</div>
-      <ol id="leaderboardList"></ol>
+    <div id="mobileJoystick" aria-hidden="true">
+      <div id="joyBase"><div id="joyKnob"></div></div>
     </div>
-
-    <div id="tips" class="glass">WASD / Pfeiltasten · Trail schließen = Fläche sichern</div>
 
     <div id="startOverlay">
       <div class="startCard glass">
         <h1>tralala.io</h1>
-        <p>3D Territory Arena · 30 Spieler Lobby</p>
+        <p>Capture territory, survive 3 lives, and unlock skins.</p>
 
         <div class="heroPreview">
           <div id="heroCube"></div>
         </div>
 
-        <label for="nameInput">Name</label>
-        <input id="nameInput" type="text" maxlength="16" placeholder="Dein Name" autocomplete="off" />
+        <label for="nameInput">Nickname</label>
+        <input id="nameInput" type="text" maxlength="16" placeholder="Your name" autocomplete="off" />
 
-        <label>Farb-Skin</label>
-        <div id="skinRow"></div>
+        <button id="openSkinsBtn" type="button" class="secondaryBtn">Skins & Unlocks</button>
 
-        <button id="startBtn" type="button">Join Lobby</button>
-        <small>Icons/PNGs austauschbar in <code>client/assets/ui/</code> · Server URL in <code>client/src/main.js</code></small>
+        <button id="startBtn" type="button">Play</button>
+        <small>PNG placeholders: <code>client/assets/ui/coin.png</code> (64x64), <code>client/assets/ui/alert.png</code> (80x80).</small>
+      </div>
+
+      <div id="skinsOverlay" class="hidden">
+        <div class="skinsCard glass">
+          <h2>Skin Menu</h2>
+          <p>Select unlocked colors. Locked skins show progress.</p>
+          <div id="skinRow"></div>
+          <div id="skinRequirement"></div>
+          <div class="skinsActions">
+            <button id="closeSkinsBtn" type="button" class="secondaryBtn">Back</button>
+            <button id="selectSkinBtn" type="button">Select</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
