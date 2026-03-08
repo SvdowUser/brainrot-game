@@ -255,12 +255,6 @@ function setupRound() {
   entity.body.position.set(p.x, 0, p.z);
 }
 
-function setupRound() {
-  state.entities.forEach((e) => scene.remove(e.body));
-  state.entities.length = 0;
-  state.owners.fill(NONE);
-  state.trailOwners.fill(NONE);
-
   const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
   state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
   state.dirtyColors = true;
