@@ -320,6 +320,14 @@ function setupRound() {
   for (let i = 0; i < 8; i++) {
     state.entities.push(makeEntity({ id: i + 1, name: npcNames[i], skinIndex: i + 1, npc: true }));
   }
+  const p = cellCenter(cx, cy);
+  entity.body.position.set(p.x, 0, p.z);
+}
+
+  const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
+  state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
+  state.dirtyColors = true;
+  state.dirtyTrails = true;
 
   const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
   state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
@@ -501,6 +509,9 @@ function stepEntity(entity) {
   if (trailOwner !== NONE && trailOwner !== entity.id) {
     killEntity(state.entities[trailOwner], entity);
   }
+
+  const trailOwner = state.trailOwners[i];
+  if (trailOwner !== NONE && trailOwner !== entity.id) killEntity(state.entities[trailOwner], entity);
 }
 
 function nearestEnemyTrail(entity, radius = 10) {
@@ -719,6 +730,9 @@ function setupUIHandlers() {
     connectSocket();
     if (state.socket?.connected) state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
   });
+
+  state.profile.bestArea = Math.max(state.profile.bestArea, areaPct);
+  state.profile.bestScore = Math.max(state.profile.bestScore, score);
 }
 
 function setupControls() {
