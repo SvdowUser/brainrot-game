@@ -28,6 +28,8 @@ const ui = {
   tutorialCard: document.getElementById('tutorialCard'),
   closeTutorialBtn: document.getElementById('closeTutorialBtn'),
   settingsBtn: document.getElementById('settingsBtn'),
+  settingsSheet: document.getElementById('settingsSheet'),
+  settingsCloseBtn: document.getElementById('settingsCloseBtn'),
   menuCoinValue: document.getElementById('menuCoinValue'),
   bestScoreValue: document.getElementById('bestScoreValue'),
   nameInput: document.getElementById('nameInput'),
@@ -108,6 +110,21 @@ function loadProfile() {
 
 function saveProfile() {
   localStorage.setItem(profileKey, JSON.stringify(state.profile));
+}
+
+function onPress(el, handler) {
+  let last = 0;
+  const run = (e) => {
+    const now = performance.now();
+    if (now - last < 260) return;
+    last = now;
+    if (e) e.preventDefault();
+    handler();
+  };
+  el.addEventListener('click', run);
+  el.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'touch') run(e);
+  });
 }
 
 function idx(x, y) { return y * GRID + x; }
@@ -621,23 +638,22 @@ function connectSocket() {
 }
 
 function setupUIHandlers() {
-  ui.settingsBtn.addEventListener('click', () => {
-    alert('Settings panel coming soon. Replace this with your own menu.');
-  });
+  onPress(ui.settingsBtn, () => ui.settingsSheet.classList.remove('hidden'));
+  onPress(ui.settingsCloseBtn, () => ui.settingsSheet.classList.add('hidden'));
 
-  ui.openSkinsBtn.addEventListener('click', showSkins);
-  ui.skinsBackBtn.addEventListener('click', showMenu);
+  onPress(ui.openSkinsBtn, showSkins);
+  onPress(ui.skinsBackBtn, showMenu);
 
-  ui.skinPrevBtn.addEventListener('click', () => {
+  onPress(ui.skinPrevBtn, () => {
     state.previewSkinIndex = (state.previewSkinIndex - 1 + SKINS.length) % SKINS.length;
     updateSkinPreview();
   });
-  ui.skinNextBtn.addEventListener('click', () => {
+  onPress(ui.skinNextBtn, () => {
     state.previewSkinIndex = (state.previewSkinIndex + 1) % SKINS.length;
     updateSkinPreview();
   });
 
-  ui.skinSelectBtn.addEventListener('click', () => {
+  onPress(ui.skinSelectBtn, () => {
     if (!isSkinUnlocked(state.previewSkinIndex)) return;
     state.skinIndex = state.previewSkinIndex;
     state.profile.skinIndex = state.skinIndex;
@@ -645,9 +661,9 @@ function setupUIHandlers() {
     showMenu();
   });
 
-  ui.closeTutorialBtn.addEventListener('click', () => ui.tutorialCard.classList.add('hidden'));
+  onPress(ui.closeTutorialBtn, () => ui.tutorialCard.classList.add('hidden'));
 
-  ui.playBtn.addEventListener('click', () => {
+  onPress(ui.playBtn, () => {
     state.myName = sanitizeName(ui.nameInput.value);
     state.profile.bestName = state.myName;
     saveProfile();
