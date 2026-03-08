@@ -7,7 +7,7 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>tralala.io</title>
-  <link rel="stylesheet" href="./style.css?v=20260308g" />
+  <link rel="stylesheet" href="./style.css?v=20260308h" />
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body>
@@ -16,17 +16,17 @@
   <div id="uiRoot">
     <section id="menuScreen" class="screen">
       <header class="topBar">
-        <div class="pill coinPill"><span class="hexCoin"></span><span id="menuCoins">0</span></div>
-        <button id="settingsBtn" class="iconBtn" type="button" aria-label="Open settings">⚙</button>
+        <div class="pill"><span class="coin"></span><span id="menuCoins">0</span></div>
+        <button id="settingsBtn" class="iconBtn" type="button" aria-label="Settings">⚙</button>
       </header>
 
       <main class="menuMain">
         <h1 class="logo">tralala<span>.io</span></h1>
-        <div class="heroPanel"><div id="heroCube" class="cube"></div></div>
+        <div class="heroWrap"><div id="heroCube" class="cube"></div></div>
 
         <div class="nameRow">
           <input id="nameInput" maxlength="16" placeholder="Nickname" autocomplete="off" />
-          <div class="pill bestPill">Best <span id="bestScore">0</span></div>
+          <div class="pill small">Best <span id="bestScore">0</span></div>
         </div>
 
         <button id="playBtn" class="playBtn" type="button">PLAY</button>
@@ -40,7 +40,7 @@
         <h2>Skins</h2>
       </header>
 
-      <div class="skinStage">
+      <div class="skinsBody">
         <button id="skinPrevBtn" class="navBtn" type="button">‹</button>
         <div class="skinCard">
           <div id="skinPreviewCube" class="cube large"></div>
@@ -50,28 +50,27 @@
         <button id="skinNextBtn" class="navBtn" type="button">›</button>
       </div>
 
-      <footer class="skinsFooter">
+      <footer class="skinsFoot">
         <button id="skinSelectBtn" class="playBtn small" type="button">Select</button>
       </footer>
     </section>
 
     <section id="settingsSheet" class="overlay hidden">
-      <div class="overlayCard">
+      <div class="dialog">
         <h3>Settings</h3>
-        <p>Sound and controls options can be added here.</p>
+        <p id="networkHint">For online play, your Node server must run and be reachable.</p>
         <button id="settingsCloseBtn" class="subBtn" type="button">Close</button>
       </div>
     </section>
 
     <section id="tutorialCard" class="tutorial hidden">
-      <button id="closeTutorialBtn" class="tutorialClose" type="button">✕</button>
-      <div class="tutorialIcon">🌀</div>
-      <p>Close a loop to capture territory.</p>
+      <button id="closeTutorialBtn" class="closeBtn" type="button">✕</button>
+      <p>Close your trail loop to capture territory.</p>
     </section>
 
     <section id="gameHud" class="hidden">
       <div class="hudTop">
-        <div class="pill coinPill"><span class="hexCoin"></span><span id="coinValue">0</span></div>
+        <div class="pill"><span class="coin"></span><span id="coinValue">0</span></div>
         <div class="pill">Score <span id="scoreValue">0</span></div>
         <div class="pill">Area <span id="areaValue">0%</span></div>
       </div>
@@ -81,12 +80,15 @@
           <h3>Leaderboard</h3>
           <ol id="leaderboardList"></ol>
         </div>
-        <div class="playerInfo"><span id="playerName">Guest</span><span id="livesValue">❤❤❤</span></div>
+        <div class="playerInfo">
+          <span id="playerName">Guest</span>
+          <span id="livesValue">❤❤❤</span>
+        </div>
       </aside>
 
-      <canvas id="miniMap" width="132" height="132"></canvas>
+      <canvas id="miniMap" width="128" height="128"></canvas>
 
-      <div id="mobileJoystick" aria-hidden="true">
+      <div id="mobileJoystick" class="hidden" aria-hidden="true">
         <div id="joyBase"><div id="joyKnob"></div></div>
       </div>
     </section>
@@ -94,7 +96,7 @@
 
   <script>
     (function () {
-      const BUILD = '20260308g';
+      const BUILD = '20260308h';
       const params = new URLSearchParams(location.search);
       if (params.get('v') !== BUILD) {
         params.set('v', BUILD);
@@ -102,6 +104,6 @@
       }
     })();
   </script>
-  <script type="module" src="./src/main.js?v=20260308g"></script>
+  <script type="module" src="./src/main.js?v=20260308h"></script>
 </body>
 </html>
