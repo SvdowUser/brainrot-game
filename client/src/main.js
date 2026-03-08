@@ -320,6 +320,19 @@ function setupRound() {
   for (let i = 0; i < 8; i++) {
     state.entities.push(makeEntity({ id: i + 1, name: npcNames[i], skinIndex: i + 1, npc: true }));
   }
+  const p = cellCenter(cx, cy);
+  entity.body.position.set(p.x, 0, p.z);
+}
+
+  const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
+  state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
+  state.dirtyColors = true;
+  state.dirtyTrails = true;
+
+  const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
+  state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
+  state.dirtyColors = true;
+  state.dirtyTrails = true;
 
   const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
   state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
@@ -501,6 +514,19 @@ function stepEntity(entity) {
   if (trailOwner !== NONE && trailOwner !== entity.id) {
     killEntity(state.entities[trailOwner], entity);
   }
+
+  const trailOwner = state.trailOwners[i];
+  if (trailOwner !== NONE && trailOwner !== entity.id) {
+    killEntity(state.entities[trailOwner], entity);
+  }
+
+  const trailOwner = state.trailOwners[i];
+  if (trailOwner !== NONE && trailOwner !== entity.id) {
+    killEntity(state.entities[trailOwner], entity);
+  }
+
+  const trailOwner = state.trailOwners[i];
+  if (trailOwner !== NONE && trailOwner !== entity.id) killEntity(state.entities[trailOwner], entity);
 }
 
 function nearestEnemyTrail(entity, radius = 10) {
@@ -719,6 +745,17 @@ function setupUIHandlers() {
     connectSocket();
     if (state.socket?.connected) state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
   });
+
+  function resetJoystick() {
+    state.joystick.active = false;
+    state.joystick.x = 0;
+    state.joystick.y = 0;
+    ui.joyKnob.style.left = '36px';
+    ui.joyKnob.style.top = '36px';
+  }
+
+  ui.joyBase.addEventListener('pointerup', resetJoystick);
+  ui.joyBase.addEventListener('pointercancel', resetJoystick);
 }
 
 function setupControls() {
