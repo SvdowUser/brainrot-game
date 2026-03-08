@@ -334,11 +334,17 @@ function setupRound() {
   state.dirtyColors = true;
   state.dirtyTrails = true;
 
+  const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
+  state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
+  state.dirtyColors = true;
+  state.dirtyTrails = true;
+
   if (!state.tutorialSeen) {
     state.tutorialSeen = true;
     ui.tutorialCard.classList.remove('hidden');
   }
 }
+
 
 function buildGridMesh() {
   const geo = new THREE.BoxGeometry(CELL * 0.96, 0.35, CELL * 0.96);
@@ -705,6 +711,30 @@ function setupUIHandlers() {
     state.profile.skinIndex = state.skinIndex;
     saveProfile();
     showMenu();
+  });
+
+  onPress(ui.closeTutorialBtn, () => ui.tutorialCard.classList.add('hidden'));
+
+  onPress(ui.playBtn, async () => {
+    try {
+      await ensureThree();
+      if (!renderer) init3D();
+    } catch {
+      ui.settingsSheet.classList.remove('hidden');
+      ui.settingsSheet.querySelector('h3').textContent = 'Could not load 3D engine';
+      return;
+    }
+
+    state.myName = sanitizeName(ui.nameInput.value);
+    state.profile.name = state.myName;
+    saveProfile();
+
+    state.started = true;
+    showGameHUD();
+    setupRound();
+
+    connectSocket();
+    if (state.socket?.connected) state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
   });
 
   onPress(ui.closeTutorialBtn, () => ui.tutorialCard.classList.add('hidden'));
