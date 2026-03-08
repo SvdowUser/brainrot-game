@@ -11,6 +11,13 @@ const TOTAL = GRID * GRID;
 const NONE = -1;
 const LOBBY_LIMIT = 30;
 
+
+function requireEl(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing required UI element: #${id}`);
+  return el;
+}
+
 const SKINS = [
   { id: 'SUN', color: 0xf7cd1e, trail: 0xffea85, requirement: { type: 'none', text: 'Unlocked' } },
   { id: 'MINT', color: 0x45de90, trail: 0x9df5c7, requirement: { type: 'area', value: 10, text: 'Cover 10% area' } },
@@ -21,41 +28,41 @@ const SKINS = [
 ];
 
 const ui = {
-  scene: document.getElementById('scene'),
-  menuScreen: document.getElementById('menuScreen'),
-  skinsScreen: document.getElementById('skinsScreen'),
-  gameHud: document.getElementById('gameHud'),
-  tutorialCard: document.getElementById('tutorialCard'),
-  closeTutorialBtn: document.getElementById('closeTutorialBtn'),
-  settingsBtn: document.getElementById('settingsBtn'),
-  settingsSheet: document.getElementById('settingsSheet'),
-  settingsCloseBtn: document.getElementById('settingsCloseBtn'),
-  menuCoinValue: document.getElementById('menuCoinValue'),
-  bestScoreValue: document.getElementById('bestScoreValue'),
-  nameInput: document.getElementById('nameInput'),
-  heroCube: document.getElementById('heroCube'),
-  playBtn: document.getElementById('playBtn'),
-  openSkinsBtn: document.getElementById('openSkinsBtn'),
+  scene: requireEl('scene'),
+  menuScreen: requireEl('menuScreen'),
+  skinsScreen: requireEl('skinsScreen'),
+  gameHud: requireEl('gameHud'),
+  tutorialCard: requireEl('tutorialCard'),
+  closeTutorialBtn: requireEl('closeTutorialBtn'),
+  settingsBtn: requireEl('settingsBtn'),
+  settingsSheet: requireEl('settingsSheet'),
+  settingsCloseBtn: requireEl('settingsCloseBtn'),
+  menuCoinValue: requireEl('menuCoinValue'),
+  bestScoreValue: requireEl('bestScoreValue'),
+  nameInput: requireEl('nameInput'),
+  heroCube: requireEl('heroCube'),
+  playBtn: requireEl('playBtn'),
+  openSkinsBtn: requireEl('openSkinsBtn'),
 
-  skinsBackBtn: document.getElementById('skinsBackBtn'),
-  skinPrevBtn: document.getElementById('skinPrevBtn'),
-  skinNextBtn: document.getElementById('skinNextBtn'),
-  skinSelectBtn: document.getElementById('skinSelectBtn'),
-  skinPreviewCube: document.getElementById('skinPreviewCube'),
-  skinName: document.getElementById('skinName'),
-  skinStatus: document.getElementById('skinStatus'),
+  skinsBackBtn: requireEl('skinsBackBtn'),
+  skinPrevBtn: requireEl('skinPrevBtn'),
+  skinNextBtn: requireEl('skinNextBtn'),
+  skinSelectBtn: requireEl('skinSelectBtn'),
+  skinPreviewCube: requireEl('skinPreviewCube'),
+  skinName: requireEl('skinName'),
+  skinStatus: requireEl('skinStatus'),
 
-  coinValue: document.getElementById('coinValue'),
-  scoreValue: document.getElementById('scoreValue'),
-  areaValue: document.getElementById('areaValue'),
-  playerName: document.getElementById('playerName'),
-  livesValue: document.getElementById('livesValue'),
-  leaderboardList: document.getElementById('leaderboardList'),
-  miniMap: document.getElementById('miniMap'),
+  coinValue: requireEl('coinValue'),
+  scoreValue: requireEl('scoreValue'),
+  areaValue: requireEl('areaValue'),
+  playerName: requireEl('playerName'),
+  livesValue: requireEl('livesValue'),
+  leaderboardList: requireEl('leaderboardList'),
+  miniMap: requireEl('miniMap'),
 
-  mobileJoystick: document.getElementById('mobileJoystick'),
-  joyBase: document.getElementById('joyBase'),
-  joyKnob: document.getElementById('joyKnob'),
+  mobileJoystick: requireEl('mobileJoystick'),
+  joyBase: requireEl('joyBase'),
+  joyKnob: requireEl('joyKnob'),
 };
 
 async function ensureThree() {
@@ -261,6 +268,7 @@ function spawnArea(entity, cx, cy, radius = 2) {
 }
 
 function setupRound() {
+  if (!scene) throw new Error('Scene is not initialized.');
   state.entities.forEach((e) => scene.remove(e.body));
   state.entities.length = 0;
   state.owners.fill(NONE);
@@ -277,6 +285,11 @@ function setupRound() {
   const p = cellCenter(cx, cy);
   entity.body.position.set(p.x, 0, p.z);
 }
+
+  const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
+  state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
+  state.dirtyColors = true;
+  state.dirtyTrails = true;
 
   const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
   state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
@@ -442,6 +455,11 @@ function stepEntity(entity) {
     }
   } else if (entity.trail.length > 0) {
     closeLoop(entity);
+  }
+
+  const trailOwner = state.trailOwners[i];
+  if (trailOwner !== NONE && trailOwner !== entity.id) {
+    killEntity(state.entities[trailOwner], entity);
   }
 
   const trailOwner = state.trailOwners[i];
@@ -812,12 +830,6 @@ function init3D() {
   clock = new THREE.Clock();
   animate();
 }
-
-const clock = new THREE.Clock();
-let colorTimer = 0;
-let trailTimer = 0;
-let hudTimer = 0;
-let mapTimer = 0;
 
 function animate() {
   if (!renderer || !scene || !camera || !clock) return;
