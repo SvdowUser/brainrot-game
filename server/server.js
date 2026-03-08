@@ -44,7 +44,6 @@ function emitBoard() {
       coins: p.coins,
       area: p.area,
       lives: p.lives,
-      skinIndex: p.skinIndex,
     }))
     .sort((a, b) => (b.area - a.area) || (b.kills - a.kills) || (b.coins - a.coins))
     .slice(0, 10);

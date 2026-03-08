@@ -33,17 +33,20 @@
 
     <div id="miniMapWrap" class="glass">
       <div class="panelTitle">Mini Map</div>
-      <canvas id="miniMap" width="180" height="180"></canvas>
+      <canvas id="miniMap" width="220" height="220"></canvas>
     </div>
 
-    <div id="mobileJoystick" aria-hidden="true">
-      <div id="joyBase"><div id="joyKnob"></div></div>
+    <div id="joystick" aria-label="joystick">
+      <div id="joyBase"><div id="joyStick"></div></div>
     </div>
 
     <div id="startOverlay">
       <div class="startCard glass">
-        <h1>tralala.io</h1>
-        <p>Capture territory, survive 3 lives, and unlock skins.</p>
+        <div class="logoTitle">tralala.io</div>
+        <div class="coinRow">
+          <img class="coinSmall" src="./assets/ui/coin.png" alt="coin" />
+          <span id="menuCoins">0</span>
+        </div>
 
         <div class="heroPreview">
           <div id="heroCube"></div>
@@ -52,22 +55,24 @@
         <label for="nameInput">Nickname</label>
         <input id="nameInput" type="text" maxlength="16" placeholder="Your name" autocomplete="off" />
 
-        <button id="openSkinsBtn" type="button" class="secondaryBtn">Skins & Unlocks</button>
+        <div id="bestBarWrap">
+          <div class="metaLabel">Best map control</div>
+          <div id="bestBar"><span id="bestFill"></span></div>
+          <div id="bestAreaText">0%</div>
+        </div>
 
-        <button id="startBtn" type="button">Play</button>
-        <small>PNG placeholders: <code>client/assets/ui/coin.png</code> (64x64), <code>client/assets/ui/alert.png</code> (80x80).</small>
+        <div class="menuButtons">
+          <button id="skinsBtn" type="button" class="subBtn">Skins</button>
+          <button id="startBtn" type="button" class="playBtn">Play</button>
+        </div>
       </div>
 
-      <div id="skinsOverlay" class="hidden">
-        <div class="skinsCard glass">
-          <h2>Skin Menu</h2>
-          <p>Select unlocked colors. Locked skins show progress.</p>
+      <div id="skinOverlay" class="hidden">
+        <div class="skinCard glass">
+          <h2>Skin unlocks</h2>
+          <p>Unlock by area control or score milestones.</p>
           <div id="skinRow"></div>
-          <div id="skinRequirement"></div>
-          <div class="skinsActions">
-            <button id="closeSkinsBtn" type="button" class="secondaryBtn">Back</button>
-            <button id="selectSkinBtn" type="button">Select</button>
-          </div>
+          <button id="skinCloseBtn" type="button" class="subBtn">Back</button>
         </div>
       </div>
     </div>

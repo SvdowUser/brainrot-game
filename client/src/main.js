@@ -10,14 +10,15 @@ const HALF = (GRID * CELL) / 2;
 const TOTAL = GRID * GRID;
 const NONE = -1;
 const LOBBY_LIMIT = 30;
+const PROFILE_KEY = 'tralala_profile_v2';
 
 const SKINS = [
-  { id: 'sun', color: 0xf5cb1e, trail: 0xffe87a, requirement: { type: 'none', text: 'Default' } },
-  { id: 'mint', color: 0x34e58f, trail: 0x95ffca, requirement: { type: 'area', value: 10, text: 'Cover 10% of the map' } },
-  { id: 'sky', color: 0x3eb2ff, trail: 0x93d6ff, requirement: { type: 'area', value: 20, text: 'Cover 20% of the map' } },
-  { id: 'berry', color: 0xff5d94, trail: 0xff9bbf, requirement: { type: 'area', value: 30, text: 'Cover 30% of the map' } },
-  { id: 'violet', color: 0x9f6fff, trail: 0xd0b9ff, requirement: { type: 'score', value: 100, text: 'Reach score 100' } },
-  { id: 'lava', color: 0xff8a3e, trail: 0xffbe8d, requirement: { type: 'score', value: 300, text: 'Reach score 300' } },
+  { id: 'sun', name: 'Sun', color: 0xf4c91b, trail: 0xffe86f, unlock: { type: 'free', label: 'Starter' } },
+  { id: 'mint', name: 'Mint', color: 0x3cdf98, trail: 0x8cffc8, unlock: { type: 'area', value: 10, label: 'Cover 10% of map' } },
+  { id: 'sky', name: 'Sky', color: 0x4aa9ff, trail: 0x8fcdff, unlock: { type: 'area', value: 20, label: 'Cover 20% of map' } },
+  { id: 'rose', name: 'Rose', color: 0xff5e94, trail: 0xffa3bf, unlock: { type: 'area', value: 30, label: 'Cover 30% of map' } },
+  { id: 'violet', name: 'Violet', color: 0x9d6bff, trail: 0xc8abff, unlock: { type: 'score', value: 100, label: 'Score 100+' } },
+  { id: 'aqua', name: 'Aqua', color: 0x1de2d3, trail: 0x8cf7ee, unlock: { type: 'score', value: 300, label: 'Score 300+' } },
 ];
 
 const ui = {
@@ -25,6 +26,7 @@ const ui = {
   coinIcon: document.getElementById('coinIcon'),
   coinFallback: document.getElementById('coinFallback'),
   coinValue: document.getElementById('coinValue'),
+  menuCoins: document.getElementById('menuCoins'),
   killsValue: document.getElementById('killsValue'),
   deathsValue: document.getElementById('deathsValue'),
   livesValue: document.getElementById('livesValue'),
@@ -35,41 +37,33 @@ const ui = {
   miniMap: document.getElementById('miniMap'),
   startOverlay: document.getElementById('startOverlay'),
   startBtn: document.getElementById('startBtn'),
+  skinsBtn: document.getElementById('skinsBtn'),
+  skinCloseBtn: document.getElementById('skinCloseBtn'),
   nameInput: document.getElementById('nameInput'),
+  skinOverlay: document.getElementById('skinOverlay'),
   skinRow: document.getElementById('skinRow'),
   heroCube: document.getElementById('heroCube'),
-  skinsOverlay: document.getElementById('skinsOverlay'),
-  openSkinsBtn: document.getElementById('openSkinsBtn'),
-  closeSkinsBtn: document.getElementById('closeSkinsBtn'),
-  selectSkinBtn: document.getElementById('selectSkinBtn'),
-  skinRequirement: document.getElementById('skinRequirement'),
-  mobileJoystick: document.getElementById('mobileJoystick'),
+  bestFill: document.getElementById('bestFill'),
+  bestAreaText: document.getElementById('bestAreaText'),
   joyBase: document.getElementById('joyBase'),
-  joyKnob: document.getElementById('joyKnob'),
+  joyStick: document.getElementById('joyStick'),
 };
 
-ui.coinIcon.addEventListener('load', () => {
-  ui.coinIcon.classList.add('visible');
-  ui.coinFallback.classList.remove('visible');
-});
 ui.coinIcon.addEventListener('error', () => {
-  ui.coinIcon.classList.remove('visible');
-  ui.coinFallback.classList.add('visible');
+  ui.coinIcon.style.display = 'none';
+  ui.coinFallback.style.display = 'inline';
 });
-if (ui.coinIcon.complete && ui.coinIcon.naturalWidth > 0) ui.coinIcon.classList.add('visible');
-else ui.coinFallback.classList.add('visible');
 
 const mmCtx = ui.miniMap.getContext('2d');
-const isTouch = matchMedia('(pointer: coarse)').matches;
 
 const state = {
   keys: new Set(),
+  joy: new THREE.Vector2(0, 0),
   socket: null,
   started: false,
   myId: null,
   myName: 'Guest',
   skinIndex: 0,
-  previewSkinIndex: 0,
   players: new Map(),
   remotes: new Map(),
   leaderboard: [],
@@ -82,9 +76,38 @@ const state = {
   dirtyColors: true,
   dirtyTrails: true,
   lastStatsEmit: 0,
-  profile: { bestArea: 0, bestScore: 0 },
-  joystick: { active: false, x: 0, y: 0 },
+  profile: loadProfile(),
 };
+
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return { bestArea: 0, bestScore: 0, selectedSkin: 0, totalCoins: 0 };
+    const p = JSON.parse(raw);
+    return {
+      bestArea: Number(p.bestArea || 0),
+      bestScore: Number(p.bestScore || 0),
+      selectedSkin: Number.isInteger(p.selectedSkin) ? p.selectedSkin : 0,
+      totalCoins: Number(p.totalCoins || 0),
+    };
+  } catch {
+    return { bestArea: 0, bestScore: 0, selectedSkin: 0, totalCoins: 0 };
+  }
+}
+
+function saveProfile() {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+}
+
+state.skinIndex = Math.min(state.profile.selectedSkin || 0, SKINS.length - 1);
+
+function skinUnlocked(index) {
+  const skin = SKINS[index];
+  if (!skin || skin.unlock.type === 'free') return true;
+  if (skin.unlock.type === 'area') return state.profile.bestArea >= skin.unlock.value;
+  if (skin.unlock.type === 'score') return state.profile.bestScore >= skin.unlock.value;
+  return false;
+}
 
 function sanitizeName(name) {
   const clean = String(name || '').replace(/[^a-zA-Z0-9 _-]/g, '').trim().slice(0, 16);
@@ -106,29 +129,14 @@ function worldToCell(pos) {
   };
 }
 
-function isSkinUnlocked(i) {
-  const req = SKINS[i].requirement;
-  if (req.type === 'none') return true;
-  if (req.type === 'area') return state.profile.bestArea >= req.value;
-  if (req.type === 'score') return state.profile.bestScore >= req.value;
-  return false;
-}
-
-function scoreOf(entity) {
-  return entity.kills * 30 + entity.coins + Math.floor((entity.area / TOTAL) * 100 * 3);
-}
-
 function createAvatar(skin, scale = 1) {
   const g = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: skin.color, roughness: 0.34, metalness: 0.1 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.2 * scale, 1.2 * scale, 1.2 * scale), mat);
-  body.position.y = 0.86 * scale;
-  const base = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34 * scale, 0.4 * scale, 0.25 * scale, 8),
-    new THREE.MeshStandardMaterial({ color: 0x11323f })
-  );
-  base.position.y = 0.15 * scale;
-  g.add(body, base);
+  const mat = new THREE.MeshStandardMaterial({ color: skin.color, roughness: 0.25, metalness: 0.1 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.25 * scale, 1.25 * scale, 1.25 * scale), mat);
+  body.position.y = 0.9 * scale;
+  const shadow = new THREE.Mesh(new THREE.CylinderGeometry(0.54 * scale, 0.54 * scale, 0.06 * scale, 18), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 }));
+  shadow.position.y = 0.02;
+  g.add(body, shadow);
   scene.add(g);
   return g;
 }
@@ -142,11 +150,11 @@ function makeEntity(data) {
     skin,
     isPlayer: !!data.isPlayer,
     npc: !!data.npc,
-    speed: data.isPlayer ? 9.5 : 8.1 + Math.random() * 1.6,
+    speed: data.isPlayer ? 9.2 : 8.0 + Math.random() * 1.4,
     dir: Math.random() * Math.PI * 2,
     kills: 0,
-    coins: 0,
     deaths: 0,
+    coins: 0,
     lives: 3,
     area: 0,
     trail: [],
@@ -190,6 +198,8 @@ function setupRound() {
   for (let i = 0; i < 8; i++) {
     state.entities.push(makeEntity({ id: i + 1, name: npcNames[i], skinIndex: i + 1, npc: true }));
   }
+  return best;
+}
 
   const anchors = [[35, 35], [10, 10], [60, 10], [10, 60], [60, 60], [20, 35], [50, 35], [35, 18], [35, 55]];
   state.entities.forEach((e, i) => spawnArea(e, anchors[i][0], anchors[i][1], e.isPlayer ? 3 : 2));
@@ -198,8 +208,8 @@ function setupRound() {
 }
 
 function buildGridMesh() {
-  const geo = new THREE.BoxGeometry(CELL * 0.92, 0.45, CELL * 0.92);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x5e9093, roughness: 0.82, metalness: 0.04 });
+  const geo = new THREE.BoxGeometry(CELL * 0.95, 0.44, CELL * 0.95);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x2f787c, roughness: 0.74, metalness: 0.03 });
   const mesh = new THREE.InstancedMesh(geo, mat, TOTAL);
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   const tmp = new THREE.Object3D();
@@ -210,7 +220,7 @@ function buildGridMesh() {
       tmp.position.set(p.x, 0, p.z);
       tmp.updateMatrix();
       mesh.setMatrixAt(i, tmp.matrix);
-      mesh.setColorAt(i, new THREE.Color(0x5e9093));
+      mesh.setColorAt(i, new THREE.Color(0x2f787c));
       i++;
     }
   }
@@ -222,7 +232,7 @@ function paintGrid() {
   if (!state.dirtyColors) return;
   for (let i = 0; i < TOTAL; i++) {
     const owner = state.owners[i];
-    const c = owner === NONE ? 0x5e9093 : (state.entities[owner]?.skin.color || 0x5e9093);
+    const c = owner === NONE ? 0x2f787c : (state.entities[owner]?.skin.color || 0x2f787c);
     state.gridMesh.setColorAt(i, new THREE.Color(c));
   }
   state.gridMesh.instanceColor.needsUpdate = true;
@@ -239,12 +249,12 @@ function paintTrails() {
     const x = i % GRID;
     const y = Math.floor(i / GRID);
     const p = cellCenter(x, y);
-    const skin = state.entities[owner].skin;
+    const color = state.entities[owner].skin.trail;
     const m = new THREE.Mesh(
-      new THREE.BoxGeometry(CELL * 0.42, 0.85, CELL * 0.42),
-      new THREE.MeshStandardMaterial({ color: skin.trail, emissive: skin.trail, emissiveIntensity: 0.45 })
+      new THREE.BoxGeometry(CELL * 0.48, 0.8, CELL * 0.48),
+      new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.36 })
     );
-    m.position.set(p.x, 0.8, p.z);
+    m.position.set(p.x, 0.72, p.z);
     state.trailMeshes.set(i, m);
     scene.add(m);
   }
@@ -261,7 +271,7 @@ function closeLoop(entity) {
   }
 
   const points = entity.trail.map((cellIdx) => ({ x: cellIdx % GRID + 0.5, y: Math.floor(cellIdx / GRID) + 0.5 }));
-  let minX = GRID - 1; let minY = GRID - 1; let maxX = 0; let maxY = 0;
+  let minX = GRID - 1, minY = GRID - 1, maxX = 0, maxY = 0;
   points.forEach((p) => {
     minX = Math.min(minX, Math.floor(p.x));
     minY = Math.min(minY, Math.floor(p.y));
@@ -302,19 +312,28 @@ function respawn(entity) {
   state.dirtyTrails = true;
 }
 
+function endRunToMenu() {
+  state.started = false;
+  ui.startOverlay.style.display = 'grid';
+  ui.skinOverlay.classList.add('hidden');
+  state.profile.totalCoins += state.local?.coins || 0;
+  ui.menuCoins.textContent = `${state.profile.totalCoins}`;
+  saveProfile();
+  if (state.socket) state.socket.emit('leave_game');
+}
+
 function killEntity(victim, killer) {
   if (!victim || !killer) return;
   if (killer.isPlayer) {
     killer.coins += 8;
     killer.kills += 1;
   }
+  victim.deaths += 1;
+
   if (victim.isPlayer) {
-    victim.deaths += 1;
     victim.lives -= 1;
     if (victim.lives <= 0) {
-      state.started = false;
-      ui.startOverlay.style.display = 'grid';
-      if (state.socket) state.socket.emit('leave_game');
+      endRunToMenu();
       return;
     }
   }
@@ -336,12 +355,9 @@ function stepEntity(entity) {
   } else if (entity.trail.length > 0) {
     closeLoop(entity);
   }
-}
 
   const trailOwner = state.trailOwners[i];
-  if (trailOwner !== NONE && trailOwner !== entity.id) {
-    killEntity(state.entities[trailOwner], entity);
-  }
+  if (trailOwner !== NONE && trailOwner !== entity.id) killEntity(state.entities[trailOwner], entity);
 }
 
 function nearestEnemyTrail(entity, radius = 10) {
@@ -364,13 +380,13 @@ function nearestEnemyTrail(entity, radius = 10) {
 
 function updateNpc(npc, dt, t) {
   const c = worldToCell(npc.body.position);
-  const meHome = cellCenter(npc.home.x, npc.home.y);
+  const home = cellCenter(npc.home.x, npc.home.y);
   const inOwn = state.owners[idx(c.x, c.y)] === npc.id;
 
   if (t > npc.aiTick) {
     npc.aiTick = t + 0.35 + Math.random() * 0.8;
     if (!inOwn && npc.trail.length > 10) {
-      npc.dir = Math.atan2(meHome.x - npc.body.position.x, meHome.z - npc.body.position.z) + (Math.random() - 0.5) * 0.2;
+      npc.dir = Math.atan2(home.x - npc.body.position.x, home.z - npc.body.position.z) + (Math.random() - 0.5) * 0.2;
     } else {
       const enemy = nearestEnemyTrail(npc, 9);
       if (enemy) npc.dir = Math.atan2(enemy.x - npc.body.position.x, enemy.z - npc.body.position.z);
@@ -387,19 +403,13 @@ function updateNpc(npc, dt, t) {
   stepEntity(npc);
 }
 
-function joystickInput() {
-  const v = new THREE.Vector2(state.joystick.x, state.joystick.y);
-  return v.lengthSq() > 0.01 ? v.normalize() : new THREE.Vector2(0, 0);
-}
-
 function getInput() {
   const m = new THREE.Vector2(0, 0);
   if (state.keys.has('w') || state.keys.has('arrowup')) m.y -= 1;
   if (state.keys.has('s') || state.keys.has('arrowdown')) m.y += 1;
   if (state.keys.has('a') || state.keys.has('arrowleft')) m.x -= 1;
   if (state.keys.has('d') || state.keys.has('arrowright')) m.x += 1;
-  const j = joystickInput();
-  m.add(j);
+  m.add(state.joy);
   return m.lengthSq() > 0 ? m.normalize() : m;
 }
 
@@ -407,7 +417,6 @@ function updatePlayer(dt) {
   const p = state.local;
   const inVec = getInput();
   if (inVec.lengthSq() > 0) p.dir = Math.atan2(inVec.x, inVec.y);
-
   p.body.position.x += Math.sin(p.dir) * p.speed * dt;
   p.body.position.z += Math.cos(p.dir) * p.speed * dt;
   p.body.position.x = clamp(p.body.position.x, -HALF + 1, HALF - 1);
@@ -415,9 +424,7 @@ function updatePlayer(dt) {
   p.body.rotation.y = p.dir;
   stepEntity(p);
 
-  if (state.socket?.connected) {
-    state.socket.emit('move', { x: p.body.position.x, z: p.body.position.z, rot: p.dir });
-  }
+  if (state.socket?.connected) state.socket.emit('move', { x: p.body.position.x, z: p.body.position.z, rot: p.dir });
 }
 
 function updateArea() {
@@ -432,7 +439,7 @@ function drawMinimap() {
   const w = ui.miniMap.width;
   const h = ui.miniMap.height;
   mmCtx.clearRect(0, 0, w, h);
-  mmCtx.fillStyle = '#0c1c20';
+  mmCtx.fillStyle = '#143a3d';
   mmCtx.fillRect(0, 0, w, h);
 
   const pixel = w / GRID;
@@ -449,9 +456,9 @@ function drawMinimap() {
   state.players.forEach((p) => {
     const x = ((p.x + HALF) / (GRID * CELL)) * w;
     const y = ((p.z + HALF) / (GRID * CELL)) * h;
-    mmCtx.fillStyle = p.id === state.myId ? '#ffffff' : '#ffd35f';
+    mmCtx.fillStyle = p.id === state.myId ? '#ffffff' : '#ffd76a';
     mmCtx.beginPath();
-    mmCtx.arc(x, y, p.id === state.myId ? 3.8 : 2.5, 0, Math.PI * 2);
+    mmCtx.arc(x, y, p.id === state.myId ? 3.2 : 2.3, 0, Math.PI * 2);
     mmCtx.fill();
   });
 }
@@ -477,12 +484,25 @@ function updateRemoteVisuals() {
   });
 }
 
+function localLeaderboardRows() {
+  return state.entities
+    .map((e) => ({
+      id: e.id === 0 ? state.myId : `npc-${e.id}`,
+      name: e.id === 0 ? state.myName : e.name,
+      area: (e.area / TOTAL) * 100,
+      kills: e.kills,
+      coins: e.coins,
+    }))
+    .sort((a, b) => b.area - a.area)
+    .slice(0, 8);
+}
+
 function renderHUD() {
   const me = state.local;
   updateArea();
 
   const areaPct = (me.area / TOTAL) * 100;
-  const score = scoreOf(me);
+  const score = me.kills * 50 + me.coins;
   state.profile.bestArea = Math.max(state.profile.bestArea, areaPct);
   state.profile.bestScore = Math.max(state.profile.bestScore, score);
 
@@ -492,16 +512,19 @@ function renderHUD() {
   ui.deathsValue.textContent = `${me.deaths}`;
   ui.livesValue.textContent = `${me.lives}`;
   ui.areaValue.textContent = `${areaPct.toFixed(1)}%`;
-  ui.lobbyValue.textContent = `${state.players.size}/${LOBBY_LIMIT}`;
+  ui.lobbyValue.textContent = `${state.players.size || 1}/${LOBBY_LIMIT}`;
 
-  const rows = [...state.leaderboard].slice(0, 8);
+  const rows = state.leaderboard.length > 0 ? state.leaderboard.slice(0, 8) : localLeaderboardRows();
   ui.leaderboardList.innerHTML = '';
   rows.forEach((r) => {
-    const color = SKINS[r.skinIndex % SKINS.length]?.color || 0xffffff;
     const li = document.createElement('li');
-    li.innerHTML = `<span style="color:#${color.toString(16).padStart(6, '0')}">■</span> ${r.name}${r.id === state.myId ? ' (You)' : ''} · ${r.area.toFixed(1)}%`;
+    li.textContent = `${r.name}${r.id === state.myId ? ' (You)' : ''} · ${r.area.toFixed(1)}% · ${r.kills}K`;
     ui.leaderboardList.appendChild(li);
   });
+
+  ui.bestFill.style.width = `${clamp(state.profile.bestArea, 0, 100)}%`;
+  ui.bestAreaText.textContent = `${state.profile.bestArea.toFixed(1)}%`;
+  saveProfile();
 }
 
 function emitStats(t) {
@@ -521,14 +544,11 @@ function connectSocket() {
 
   state.socket.on('connect', () => {
     state.myId = state.socket.id;
-    state.socket.emit('join_game', {
-      name: state.myName,
-      skinIndex: state.skinIndex,
-    });
+    state.socket.emit('join_game', { name: state.myName, skinIndex: state.skinIndex });
   });
 
   state.socket.on('server_full', () => {
-    alert('Lobby is full (30/30). Try again in a second.');
+    alert('Lobby is full (30/30). Please retry in a moment.');
     state.started = false;
     ui.startOverlay.style.display = 'grid';
   });
@@ -538,63 +558,82 @@ function connectSocket() {
     players.forEach((p) => state.players.set(p.id, p));
   });
 
-  state.socket.on('leaderboard', ({ rows }) => {
-    state.leaderboard = rows;
-  });
-
-  state.socket.on('room_info', ({ count }) => {
-    ui.lobbyValue.textContent = `${count}/${LOBBY_LIMIT}`;
-  });
+  state.socket.on('leaderboard', ({ rows }) => { state.leaderboard = rows; });
+  state.socket.on('room_info', ({ count }) => { ui.lobbyValue.textContent = `${count}/${LOBBY_LIMIT}`; });
 }
 
-function paintHeroPreview() {
-  const s = SKINS[state.previewSkinIndex];
-  ui.heroCube.style.background = `linear-gradient(140deg, #fff8b7, #${s.color.toString(16).padStart(6, '0')})`;
+function updateHeroPreview() {
+  const s = SKINS[state.skinIndex];
+  ui.heroCube.style.background = `linear-gradient(140deg, #ffffff70, #${s.color.toString(16).padStart(6, '0')})`;
 }
 
 function buildSkinButtons() {
   ui.skinRow.innerHTML = '';
   SKINS.forEach((s, i) => {
-    const unlocked = isSkinUnlocked(i);
+    const unlocked = skinUnlocked(i);
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = `skinBtn${i === state.previewSkinIndex ? ' active' : ''}${unlocked ? '' : ' locked'}`;
-    b.style.background = `linear-gradient(135deg, #${s.color.toString(16).padStart(6, '0')}, #243840)`;
-    b.innerHTML = `<strong>${s.id.toUpperCase()}</strong><span>${unlocked ? 'Unlocked' : 'Locked'}</span>`;
+    b.className = `skinBtn${i === state.skinIndex ? ' active' : ''}${unlocked ? '' : ' locked'}`;
+    b.innerHTML = `<span class="skinSwatch" style="background:#${s.color.toString(16).padStart(6, '0')}"></span>${s.name}<span class="skinReq">${unlocked ? 'Unlocked' : s.unlock.label}</span>`;
     b.onclick = () => {
-      state.previewSkinIndex = i;
-      ui.skinRequirement.textContent = unlocked ? 'Ready to select.' : s.requirement.text;
+      if (!unlocked) return;
+      state.skinIndex = i;
+      state.profile.selectedSkin = i;
+      saveProfile();
+      updateHeroPreview();
       buildSkinButtons();
-      paintHeroPreview();
     };
     ui.skinRow.appendChild(b);
   });
 }
 
-function ensureUnlockedSelection() {
-  if (!isSkinUnlocked(state.skinIndex)) state.skinIndex = 0;
-  if (!isSkinUnlocked(state.previewSkinIndex)) state.previewSkinIndex = state.skinIndex;
+function setupJoystick() {
+  const maxR = 38;
+  let activeId = null;
+  const rectPos = () => ui.joyBase.getBoundingClientRect();
+
+  function reset() {
+    state.joy.set(0, 0);
+    ui.joyStick.style.transform = 'translate(0px, 0px)';
+    activeId = null;
+  }
+
+  ui.joyBase.addEventListener('pointerdown', (e) => {
+    activeId = e.pointerId;
+    ui.joyBase.setPointerCapture(e.pointerId);
+  });
+
+  ui.joyBase.addEventListener('pointermove', (e) => {
+    if (activeId !== e.pointerId) return;
+    const rect = rectPos();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    const clamped = Math.min(maxR, len);
+    const nx = dx / len;
+    const ny = dy / len;
+    state.joy.set(nx * (clamped / maxR), ny * (clamped / maxR));
+    ui.joyStick.style.transform = `translate(${nx * clamped}px, ${ny * clamped}px)`;
+  });
+
+  ui.joyBase.addEventListener('pointerup', reset);
+  ui.joyBase.addEventListener('pointercancel', reset);
 }
 
-ui.openSkinsBtn.addEventListener('click', () => {
-  ensureUnlockedSelection();
-  ui.skinsOverlay.classList.remove('hidden');
+ui.skinsBtn.addEventListener('click', () => {
   buildSkinButtons();
-  ui.skinRequirement.textContent = SKINS[state.previewSkinIndex].requirement.text;
+  ui.skinOverlay.classList.remove('hidden');
 });
-
-ui.closeSkinsBtn.addEventListener('click', () => ui.skinsOverlay.classList.add('hidden'));
-ui.selectSkinBtn.addEventListener('click', () => {
-  if (isSkinUnlocked(state.previewSkinIndex)) {
-    state.skinIndex = state.previewSkinIndex;
-    ui.skinsOverlay.classList.add('hidden');
-    paintHeroPreview();
-  }
-});
+ui.skinCloseBtn.addEventListener('click', () => ui.skinOverlay.classList.add('hidden'));
 
 ui.startBtn.addEventListener('click', () => {
+  if (!skinUnlocked(state.skinIndex)) {
+    state.skinIndex = 0;
+    state.profile.selectedSkin = 0;
+  }
   state.myName = sanitizeName(ui.nameInput.value);
-  ensureUnlockedSelection();
   state.started = true;
   ui.startOverlay.style.display = 'none';
   setupRound();
@@ -605,92 +644,39 @@ ui.startBtn.addEventListener('click', () => {
 window.addEventListener('keydown', (e) => state.keys.add(e.key.toLowerCase()));
 window.addEventListener('keyup', (e) => state.keys.delete(e.key.toLowerCase()));
 
-if (isTouch) {
-  ui.mobileJoystick.classList.add('visible');
-  const center = { x: 64, y: 64 };
-  const maxDist = 36;
-
-  function setKnob(dx, dy) {
-    const len = Math.hypot(dx, dy);
-    let nx = dx;
-    let ny = dy;
-    if (len > maxDist) {
-      nx = (dx / len) * maxDist;
-      ny = (dy / len) * maxDist;
-    }
-    ui.joyKnob.style.left = `${37 + nx}px`;
-    ui.joyKnob.style.top = `${37 + ny}px`;
-    state.joystick.x = nx / maxDist;
-    state.joystick.y = ny / maxDist;
-  }
-
-  ui.joyBase.addEventListener('pointerdown', (e) => {
-    state.joystick.active = true;
-    const rect = ui.joyBase.getBoundingClientRect();
-    setKnob(e.clientX - rect.left - center.x, e.clientY - rect.top - center.y);
-    ui.joyBase.setPointerCapture(e.pointerId);
-  });
-
-  ui.joyBase.addEventListener('pointermove', (e) => {
-    if (!state.joystick.active) return;
-    const rect = ui.joyBase.getBoundingClientRect();
-    setKnob(e.clientX - rect.left - center.x, e.clientY - rect.top - center.y);
-  });
-
-  function resetJoystick() {
-    state.joystick.active = false;
-    state.joystick.x = 0;
-    state.joystick.y = 0;
-    ui.joyKnob.style.left = '37px';
-    ui.joyKnob.style.top = '37px';
-  }
-
-  ui.joyBase.addEventListener('pointerup', resetJoystick);
-  ui.joyBase.addEventListener('pointercancel', resetJoystick);
-
-  ui.scene.addEventListener('pointerdown', (e) => {
-    if (!state.started || !state.local) return;
-    if (e.clientX < window.innerWidth * 0.4 && e.clientY > window.innerHeight * 0.55) return;
-    const nx = (e.clientX / window.innerWidth) * 2 - 1;
-    const ny = -(e.clientY / window.innerHeight) * 2 + 1;
-    state.local.dir = Math.atan2(nx, ny);
-  });
-}
-
 const renderer = new THREE.WebGLRenderer({ canvas: ui.scene, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x75aeb0);
-scene.fog = new THREE.Fog(0x6ea5a7, 45, 170);
+scene.background = new THREE.Color(0x4b7f81);
+scene.fog = new THREE.Fog(0x4b7f81, 70, 190);
 
-const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 500);
-camera.position.set(0, 18, 16);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(0, 34, 19);
 
-scene.add(new THREE.HemisphereLight(0xd2fcff, 0x1b3f46, 1.15));
-const sun = new THREE.DirectionalLight(0xfff2ba, 1.35);
-sun.position.set(40, 65, 24);
+scene.add(new THREE.HemisphereLight(0xf1f8ff, 0x1c3e40, 1.08));
+const sun = new THREE.DirectionalLight(0xffffff, 1.28);
+sun.position.set(45, 70, 26);
 scene.add(sun);
 
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(GRID * CELL + 120, GRID * CELL + 120),
-  new THREE.MeshStandardMaterial({ color: 0x31666f, roughness: 1 })
-);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(GRID * CELL + 70, GRID * CELL + 70), new THREE.MeshStandardMaterial({ color: 0x0f2324, roughness: 1 }));
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
-const ring = new THREE.Mesh(
-  new THREE.RingGeometry(HALF + 1.5, HALF + 10, 80),
-  new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
-);
+const ring = new THREE.Mesh(new THREE.RingGeometry(HALF + 1, HALF + 18, 128), new THREE.MeshBasicMaterial({ color: 0x030507, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
 ring.rotation.x = -Math.PI / 2;
-ring.position.y = 0.02;
+ring.position.y = 0.03;
 scene.add(ring);
 
 state.gridMesh = buildGridMesh();
-paintHeroPreview();
+setupJoystick();
+updateHeroPreview();
+buildSkinButtons();
+ui.menuCoins.textContent = `${state.profile.totalCoins}`;
+ui.bestFill.style.width = `${clamp(state.profile.bestArea, 0, 100)}%`;
+ui.bestAreaText.textContent = `${state.profile.bestArea.toFixed(1)}%`;
 
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -718,7 +704,7 @@ function animate() {
     updateRemoteVisuals();
 
     const p = state.local.body.position;
-    const camTarget = new THREE.Vector3(p.x + 9, 15.5, p.z + 9);
+    const camTarget = new THREE.Vector3(p.x + 10, 36, p.z + 10);
     camera.position.lerp(camTarget, 0.08);
     camera.lookAt(p.x, 0, p.z);
 
@@ -727,10 +713,10 @@ function animate() {
     hudTimer += dt;
     mapTimer += dt;
 
-    if (colorTimer > 0.12) { colorTimer = 0; paintGrid(); }
-    if (trailTimer > 0.16) { trailTimer = 0; paintTrails(); }
-    if (hudTimer > 0.15) { hudTimer = 0; renderHUD(); emitStats(t); }
-    if (mapTimer > 0.16) { mapTimer = 0; drawMinimap(); }
+    if (colorTimer > 0.15) { colorTimer = 0; paintGrid(); }
+    if (trailTimer > 0.2) { trailTimer = 0; paintTrails(); }
+    if (hudTimer > 0.18) { hudTimer = 0; renderHUD(); emitStats(t); }
+    if (mapTimer > 0.2) { mapTimer = 0; drawMinimap(); }
   }
 
   renderer.render(scene, camera);
