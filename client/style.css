@@ -159,3 +159,4 @@ button, input { pointer-events: auto; touch-action: manipulation; }
   .leaderboard { width: 210px; }
   #leaderboardList { font-size: 13px; }
 }
+.settingsCard h3 { margin: 0 0 12px; }
