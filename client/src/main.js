@@ -1,7 +1,8 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
 
+const REMOTE_SERVER_URL = 'http://89.167.75.175:3000';
 const SERVER_URL = window.location.hostname.includes('github.io')
-  ? 'http://89.167.75.175:3000'
+  ? REMOTE_SERVER_URL
   : window.location.origin;
 
 const STARTER_SKINS = [
@@ -14,7 +15,7 @@ const STARTER_SKINS = [
 ];
 
 const PLAY_RADIUS = 80;
-const PROFILE_KEY = 'tralala_profile_v3';
+const PROFILE_KEY = 'tralala_profile_v4';
 const isTouch = window.matchMedia('(pointer: coarse)').matches;
 
 const $ = (id) => document.getElementById(id);
@@ -79,7 +80,7 @@ const state = {
   joined: false,
   started: false,
   focusedChat: false,
-  myId: null,
+  myId: 'local-player',
   myName: 'Guest',
   socket: null,
   keys: new Set(),
@@ -103,6 +104,8 @@ const state = {
     selectedSkinIndex: 0,
   },
   waterMeshes: [],
+  tutorialShown: false,
+  offlineBots: [],
 };
 
 const mmCtx = ui.miniMap ? ui.miniMap.getContext('2d') : null;
@@ -133,10 +136,15 @@ function loadProfile() {
     state.profile.coins = Math.max(0, Number(parsed.coins) || 0);
     state.profile.bestScore = Math.max(0, Number(parsed.bestScore) || 0);
     state.profile.bestName = sanitizeName(parsed.bestName || 'Guest');
-    state.profile.selectedSkinIndex = Math.max(0, Math.min(STARTER_SKINS.length - 1, Number(parsed.selectedSkinIndex) || 0));
+    state.profile.selectedSkinIndex = Math.max(
+      0,
+      Math.min(STARTER_SKINS.length - 1, Number(parsed.selectedSkinIndex) || 0)
+    );
     state.selectedSkinIndex = state.profile.selectedSkinIndex;
     state.previewSkinIndex = state.selectedSkinIndex;
-  } catch {}
+  } catch (err) {
+    console.warn('Could not load profile:', err);
+  }
 }
 
 function saveProfile() {
@@ -161,12 +169,15 @@ function setCubeStyle(el, skin) {
 function renderPortrait(canvas, skin, name = 'LT') {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const g = ctx.createRadialGradient(48, 24, 8, 48, 54, 64);
   g.addColorStop(0, '#a5ecff');
   g.addColorStop(0.45, skin.accent || '#67c8ff');
   g.addColorStop(1, '#0b2a3d');
+
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(48, 48, 46, 0, Math.PI * 2);
@@ -248,15 +259,21 @@ function showGame() {
   setHidden(ui.menuScreen, true);
   setHidden(ui.skinsScreen, true);
   setHidden(ui.gameHud, false);
-  if (ui.tutorialCard) setHidden(ui.tutorialCard, false);
+
+  if (!state.tutorialShown && ui.tutorialCard) {
+    setHidden(ui.tutorialCard, false);
+    state.tutorialShown = true;
+  }
 }
 
 function updateSkinPreview() {
   const skin = previewSkin();
   if (!skin) return;
+
   setCubeStyle(ui.skinPreviewCube, skin);
   setText(ui.skinName, skin.name);
   setText(ui.skinStatus, skin.unlocked ? 'Unlocked' : 'Locked · Coming soon');
+
   if (ui.skinSelectBtn) {
     ui.skinSelectBtn.disabled = !skin.unlocked;
     ui.skinSelectBtn.style.opacity = skin.unlocked ? '1' : '.5';
@@ -376,6 +393,7 @@ function addSign(text, x, y, z) {
   c.width = 512;
   c.height = 128;
   const ctx = c.getContext('2d');
+  if (!ctx) return;
 
   ctx.fillStyle = 'rgba(10, 21, 32, 0.78)';
   ctx.strokeStyle = 'rgba(255,255,255,0.16)';
@@ -395,6 +413,29 @@ function addSign(text, x, y, z) {
   sprite.scale.set(6.6, 1.65, 1);
   sprite.position.set(x, y, z);
   world.add(sprite);
+}
+
+function createPalm(x, z) {
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.34, 6, 10),
+    new THREE.MeshStandardMaterial({ color: 0x8f6039, roughness: 1 })
+  );
+  trunk.position.set(x, 2.7, z);
+  world.add(trunk);
+
+  for (let j = 0; j < 5; j++) {
+    const leaf = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.16, 3.9, 4, 10),
+      new THREE.MeshStandardMaterial({ color: 0x32bf7d, roughness: 0.8 })
+    );
+    leaf.position.copy(trunk.position).add(
+      new THREE.Vector3(Math.cos(j * 1.2) * 0.32, 3.1, Math.sin(j * 1.2) * 0.32)
+    );
+    leaf.rotation.z = Math.PI / 2;
+    leaf.rotation.y = j * 1.2;
+    leaf.rotation.x = -0.55;
+    world.add(leaf);
+  }
 }
 
 function createWorld() {
@@ -463,24 +504,7 @@ function createWorld() {
   }
 
   for (let i = 0; i < 5; i++) {
-    const trunk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.22, 0.34, 6, 10),
-      new THREE.MeshStandardMaterial({ color: 0x8f6039, roughness: 1 })
-    );
-    trunk.position.set(-60 + i * 24, 2.7, -8 + (i % 2) * 18);
-    world.add(trunk);
-
-    for (let j = 0; j < 5; j++) {
-      const leaf = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.16, 3.9, 4, 10),
-        new THREE.MeshStandardMaterial({ color: 0x32bf7d, roughness: 0.8 })
-      );
-      leaf.position.copy(trunk.position).add(new THREE.Vector3(Math.cos(j * 1.2) * 0.32, 3.1, Math.sin(j * 1.2) * 0.32));
-      leaf.rotation.z = Math.PI / 2;
-      leaf.rotation.y = j * 1.2;
-      leaf.rotation.x = -0.55;
-      world.add(leaf);
-    }
+    createPalm(-60 + i * 24, -8 + (i % 2) * 18);
   }
 
   const lockedMat = new THREE.MeshStandardMaterial({
@@ -526,13 +550,14 @@ function makeLabel(className, text) {
   const el = document.createElement('div');
   el.className = className;
   el.textContent = text;
-  if (ui.overlayLabels) ui.overlayLabels.appendChild(el);
+  ui.overlayLabels?.appendChild(el);
   return el;
 }
 
 function createAvatar(name, skinId, isLocal = false) {
   const mats = getSkinMaterials(skinId);
   const root = new THREE.Group();
+
   root.userData.skinId = skinId;
   root.userData.name = name;
   root.userData.isLocal = isLocal;
@@ -582,9 +607,11 @@ function createAvatar(name, skinId, isLocal = false) {
   const eyeGeo = new THREE.SphereGeometry(0.11, 10, 10);
   const eyeL = new THREE.Mesh(eyeGeo, mats.eye);
   eyeL.position.set(-0.26, 3.38, 1.25);
+  root.add(eyeL);
+
   const eyeR = eyeL.clone();
   eyeR.position.x = 0.26;
-  root.add(eyeL, eyeR);
+  root.add(eyeR);
 
   function makeShoe(x) {
     const g = new THREE.Group();
@@ -615,7 +642,9 @@ function createAvatar(name, skinId, isLocal = false) {
   root.userData.shoeR = shoeR;
   root.userData.nameEl = makeLabel('nameplate', name);
   root.userData.bubbleEl = makeLabel('bubble', '');
-  root.userData.bubbleEl.style.display = 'none';
+  if (root.userData.bubbleEl) {
+    root.userData.bubbleEl.style.display = 'none';
+  }
 
   world.add(root);
   return root;
@@ -634,14 +663,63 @@ function updateAvatarSkin(group, skinId) {
   const rotY = group.rotation.y;
   const name = group.userData.name || 'Guest';
   const isLocal = !!group.userData.isLocal;
+  const baseY = group.userData.baseY || 0;
+  const vel = group.userData.verticalVelocity || 0;
+  const grounded = !!group.userData.isGrounded;
+
   removeAvatar(group);
+
   const next = createAvatar(name, skinId, isLocal);
   next.position.copy(pos);
   next.rotation.y = rotY;
+  next.userData.baseY = baseY;
+  next.userData.verticalVelocity = vel;
+  next.userData.isGrounded = grounded;
   return next;
 }
 
-/* -------------------- movement / labels -------------------- */
+/* -------------------- offline bots -------------------- */
+
+function createOfflineBots() {
+  const botDefs = [
+    { name: 'Nova', skinId: 'coral', x: -12, z: 18, speed: 0.8, phase: 0.0 },
+    { name: 'Kai', skinId: 'mint', x: 18, z: 2, speed: 0.7, phase: 1.3 },
+    { name: 'Milo', skinId: 'blue', x: -30, z: 6, speed: 0.9, phase: 2.4 },
+  ];
+
+  state.offlineBots.forEach((bot) => removeAvatar(bot.avatar));
+  state.offlineBots = [];
+
+  for (const def of botDefs) {
+    const avatar = createAvatar(def.name, def.skinId, false);
+    avatar.position.set(def.x, 0, def.z);
+    state.offlineBots.push({
+      ...def,
+      avatar,
+      originX: def.x,
+      originZ: def.z,
+    });
+  }
+}
+
+function updateOfflineBots(time) {
+  for (const bot of state.offlineBots) {
+    const x = bot.originX + Math.cos(time * bot.speed + bot.phase) * 6;
+    const z = bot.originZ + Math.sin(time * bot.speed + bot.phase) * 5;
+    const nextPos = new THREE.Vector3(x, bot.avatar.position.y, z);
+    bot.avatar.position.lerp(nextPos, 0.04);
+
+    const dirX = -Math.sin(time * bot.speed + bot.phase);
+    const dirZ = Math.cos(time * bot.speed + bot.phase);
+    bot.avatar.rotation.y = Math.atan2(dirX, dirZ);
+
+    const swing = Math.sin(time * 8 * bot.speed + bot.phase) * 0.18;
+    bot.avatar.userData.shoeL.rotation.x = swing;
+    bot.avatar.userData.shoeR.rotation.x = -swing;
+  }
+}
+
+/* -------------------- labels / chat -------------------- */
 
 function addChatMessage(text) {
   if (!ui.chatLog) return;
@@ -655,22 +733,29 @@ function addChatMessage(text) {
 function bubbleForPlayer(playerId, text) {
   const visual = playerId === state.myId ? state.localVisual : state.remoteVisuals.get(playerId);
   if (!visual) return;
+
   const bubble = visual.userData.bubbleEl;
+  if (!bubble) return;
+
   bubble.textContent = text;
   bubble.style.display = 'block';
+
   clearTimeout(state.currentBubbleTimers.get(playerId));
   const t = setTimeout(() => {
     bubble.style.display = 'none';
   }, 4500);
+
   state.currentBubbleTimers.set(playerId, t);
 }
 
 function projectLabel(el, worldPos) {
   if (!el) return;
+
   const p = worldPos.clone().project(camera);
   const visible = p.z < 1;
   el.style.display = visible ? '' : 'none';
   if (!visible) return;
+
   const x = (p.x * 0.5 + 0.5) * window.innerWidth;
   const y = (-p.y * 0.5 + 0.5) * window.innerHeight;
   el.style.left = `${x}px`;
@@ -679,8 +764,10 @@ function projectLabel(el, worldPos) {
 
 function updateProjectedLabels() {
   const all = [];
+
   if (state.localVisual) all.push(state.localVisual);
   state.remoteVisuals.forEach((v) => all.push(v));
+  state.offlineBots.forEach((bot) => all.push(bot.avatar));
 
   for (const v of all) {
     const head = v.position.clone().add(new THREE.Vector3(0, 5.7, 0));
@@ -691,6 +778,7 @@ function updateProjectedLabels() {
 
 function sendChat() {
   if (!state.joined) return;
+
   const text = ui.chatInput?.value.trim().slice(0, 120);
   if (!text) return;
 
@@ -698,11 +786,13 @@ function sendChat() {
     state.socket.emit('chat_message', { text });
   } else {
     addChatMessage(`${state.myName}: ${text}`);
-    bubbleForPlayer(state.myId || 'local', text);
+    bubbleForPlayer(state.myId, text);
   }
 
   if (ui.chatInput) ui.chatInput.value = '';
 }
+
+/* -------------------- movement -------------------- */
 
 function getMoveInput() {
   let x = 0;
@@ -745,6 +835,7 @@ function updateLocalPlayer(delta, time) {
 
   const moveInput = getMoveInput();
   const speed = 8.3;
+
   const forward = new THREE.Vector3(Math.sin(state.cameraYaw), 0, Math.cos(state.cameraYaw));
   const right = new THREE.Vector3(forward.z, 0, -forward.x);
   const move = forward.clone().multiplyScalar(-moveInput.z).add(right.multiplyScalar(moveInput.x));
@@ -799,10 +890,20 @@ function updateRemoteVisuals(delta) {
   state.remoteVisuals.forEach((visual) => {
     const t = visual.userData.target;
     if (!t) return;
-    visual.position.lerp(new THREE.Vector3(t.x, t.y || 0, t.z), Math.min(1, delta * 10));
-    visual.rotation.y = THREE.MathUtils.lerp(visual.rotation.y, t.rot || 0, Math.min(1, delta * 10));
+
+    visual.position.lerp(
+      new THREE.Vector3(t.x ?? 0, t.y ?? 0, t.z ?? 0),
+      Math.min(1, delta * 10)
+    );
+    visual.rotation.y = THREE.MathUtils.lerp(
+      visual.rotation.y,
+      t.rot ?? 0,
+      Math.min(1, delta * 10)
+    );
   });
 }
+
+/* -------------------- HUD / minimap -------------------- */
 
 function updateMinimap() {
   if (!mmCtx || !ui.miniMap || !state.localVisual) return;
@@ -834,12 +935,15 @@ function updateMinimap() {
   state.remoteVisuals.forEach((v) => {
     drawDot(v.position.x, v.position.z, '#ffe180', 3);
   });
+
+  state.offlineBots.forEach((bot) => {
+    drawDot(bot.avatar.position.x, bot.avatar.position.z, '#9fe7ff', 3);
+  });
 }
 
 function updateHud() {
-  const score = Math.floor(state.profile.coins);
   setText(ui.coinValue, state.profile.coins);
-  setText(ui.scoreValue, score);
+  setText(ui.scoreValue, state.profile.bestScore);
   setText(ui.areaValue, 'Hub');
   setText(ui.playerName, state.myName);
   setText(ui.livesValue, 'Ready');
@@ -847,104 +951,162 @@ function updateHud() {
 
 /* -------------------- socket -------------------- */
 
+function canUseRemoteSocket() {
+  return !(window.location.protocol === 'https:' && SERVER_URL.startsWith('http://'));
+}
+
 function connectSocket() {
   if (!window.io) {
+    console.warn('Socket.IO client not loaded. Running offline.');
     setText(ui.serverBadge, 'Offline demo');
+    createOfflineBots();
     return;
   }
 
-  const socket = window.io(SERVER_URL, { transports: ['websocket', 'polling'] });
-  state.socket = socket;
+  if (!canUseRemoteSocket()) {
+    console.warn('Blocked mixed-content socket connection from HTTPS page to HTTP server. Running offline.');
+    setText(ui.serverBadge, 'Offline demo');
+    createOfflineBots();
+    return;
+  }
 
-  socket.on('connect', () => {
-    state.myId = socket.id;
-    setText(ui.serverBadge, 'beach-01 · connected');
+  if (state.socket) {
+    try {
+      state.socket.disconnect();
+    } catch {}
+    state.socket = null;
+  }
 
-    socket.emit('join_hub', {
-      roomId: 'beach-01',
-      name: state.myName,
-      skinId: currentSkin().id,
-      x: state.localVisual?.position.x || 0,
-      y: state.localVisual?.userData.baseY || 0,
-      z: state.localVisual?.position.z || 0,
-      rot: state.localVisual?.rotation.y || 0,
-    });
-  });
-
-  socket.on('disconnect', () => {
-    setText(ui.serverBadge, 'Disconnected');
-  });
-
-  socket.on('server_full', () => {
-    addChatMessage('Server is full.');
-  });
-
-  socket.on('room_info', (info) => {
-    if (!info) return;
-    setText(ui.serverBadge, `${info.roomId || 'beach-01'} · ${info.count || 0}/20`);
-  });
-
-  socket.on('snapshot', (payload) => {
-    if (!payload?.players) return;
-
-    const ids = new Set(payload.players.map((p) => p.id));
-
-    for (const player of payload.players) {
-      if (player.id === state.myId) {
-        if (state.localVisual) {
-          state.localVisual.userData.target = player;
-        }
-        continue;
-      }
-
-      let visual = state.remoteVisuals.get(player.id);
-      if (!visual) {
-        visual = createAvatar(player.name, player.skinId);
-        visual.position.set(player.x || 0, player.y || 0, player.z || 0);
-        visual.userData.target = player;
-        state.remoteVisuals.set(player.id, visual);
-      } else {
-        if (visual.userData.skinId !== player.skinId) {
-          const replacement = updateAvatarSkin(visual, player.skinId);
-          replacement.userData.target = player;
-          state.remoteVisuals.set(player.id, replacement);
-          visual = replacement;
-        }
-        visual.userData.name = player.name;
-        visual.userData.nameEl.textContent = player.name;
-        visual.userData.target = player;
-      }
-    }
-
-    Array.from(state.remoteVisuals.keys()).forEach((id) => {
-      if (!ids.has(id)) {
-        const visual = state.remoteVisuals.get(id);
-        removeAvatar(visual);
-        state.remoteVisuals.delete(id);
-      }
+  try {
+    const socket = window.io(SERVER_URL, {
+      transports: ['websocket', 'polling'],
+      timeout: 4000,
     });
 
-    if (ui.leaderboardList) {
-      ui.leaderboardList.innerHTML = '';
-      payload.players
-        .slice()
-        .sort((a, b) => (b.coins || 0) - (a.coins || 0))
-        .slice(0, 8)
-        .forEach((p) => {
-          const li = document.createElement('li');
-          li.textContent = `${p.name}${p.id === state.myId ? ' (You)' : ''}`;
-          ui.leaderboardList.appendChild(li);
-        });
-    }
-  });
+    state.socket = socket;
 
-  socket.on('chat_message', ({ fromId, name, text }) => {
-    addChatMessage(`${name}: ${text}`);
-    bubbleForPlayer(fromId, text);
-  });
+    socket.on('connect', () => {
+      state.myId = socket.id;
+      setText(ui.serverBadge, 'beach-01 · connected');
+
+      socket.emit('join_hub', {
+        roomId: 'beach-01',
+        name: state.myName,
+        skinId: currentSkin().id,
+        x: state.localVisual?.position.x || 0,
+        y: state.localVisual?.userData.baseY || 0,
+        z: state.localVisual?.position.z || 0,
+        rot: state.localVisual?.rotation.y || 0,
+      });
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('Socket connection failed:', err?.message || err);
+      setText(ui.serverBadge, 'Offline demo');
+      createOfflineBots();
+    });
+
+    socket.on('disconnect', () => {
+      setText(ui.serverBadge, 'Disconnected');
+    });
+
+    socket.on('server_full', () => {
+      addChatMessage('Server is full.');
+    });
+
+    socket.on('room_info', (info) => {
+      if (!info) return;
+      setText(ui.serverBadge, `${info.roomId || 'beach-01'} · ${info.count || 0}/20`);
+    });
+
+    socket.on('snapshot', (payload) => {
+      if (!payload?.players) return;
+
+      const ids = new Set(payload.players.map((p) => p.id));
+
+      for (const player of payload.players) {
+        if (player.id === state.myId) {
+          if (state.localVisual) {
+            state.localVisual.userData.target = player;
+          }
+          continue;
+        }
+
+        let visual = state.remoteVisuals.get(player.id);
+
+        if (!visual) {
+          visual = createAvatar(player.name, player.skinId);
+          visual.position.set(player.x || 0, player.y || 0, player.z || 0);
+          visual.userData.target = player;
+          state.remoteVisuals.set(player.id, visual);
+        } else {
+          if (visual.userData.skinId !== player.skinId) {
+            const replacement = updateAvatarSkin(visual, player.skinId);
+            replacement.userData.target = player;
+            replacement.userData.name = player.name;
+            replacement.userData.nameEl.textContent = player.name;
+            state.remoteVisuals.set(player.id, replacement);
+            visual = replacement;
+          }
+
+          visual.userData.name = player.name;
+          visual.userData.nameEl.textContent = player.name;
+          visual.userData.target = player;
+        }
+      }
+
+      Array.from(state.remoteVisuals.keys()).forEach((id) => {
+        if (!ids.has(id)) {
+          const visual = state.remoteVisuals.get(id);
+          removeAvatar(visual);
+          state.remoteVisuals.delete(id);
+        }
+      });
+
+      if (ui.leaderboardList) {
+        ui.leaderboardList.innerHTML = '';
+        payload.players
+          .slice()
+          .sort((a, b) => (b.coins || 0) - (a.coins || 0))
+          .slice(0, 8)
+          .forEach((p) => {
+            const li = document.createElement('li');
+            li.textContent = `${p.name}${p.id === state.myId ? ' (You)' : ''}`;
+            ui.leaderboardList.appendChild(li);
+          });
+      }
+    });
+
+    socket.on('chat_message', ({ fromId, name, text }) => {
+      addChatMessage(`${name}: ${text}`);
+      bubbleForPlayer(fromId, text);
+    });
+  } catch (err) {
+    console.warn('Socket setup failed:', err);
+    setText(ui.serverBadge, 'Offline demo');
+    createOfflineBots();
+  }
 }
 
 /* -------------------- start / ui actions -------------------- */
+
+function ensureLocalAvatar() {
+  const skin = currentSkin();
+
+  if (!state.localVisual) {
+    state.localVisual = createAvatar(state.myName, skin.id, true);
+    state.localVisual.position.set(0, 0, 10);
+    return;
+  }
+
+  if (state.localVisual.userData.skinId !== skin.id) {
+    state.localVisual = updateAvatarSkin(state.localVisual, skin.id);
+    state.localVisual.position.set(0, state.localVisual.position.y, 10);
+  }
+
+  state.localVisual.userData.name = state.myName;
+  state.localVisual.userData.nameEl.textContent = state.myName;
+}
 
 function joinGameFromOverlay() {
   const skin = currentSkin();
@@ -955,14 +1117,7 @@ function joinGameFromOverlay() {
   saveProfile();
   refreshMenuStats();
 
-  if (!state.localVisual) {
-    state.localVisual = createAvatar(state.myName, skin.id, true);
-    state.localVisual.position.set(0, 0, 10);
-  } else if (state.localVisual.userData.skinId !== skin.id) {
-    state.localVisual = updateAvatarSkin(state.localVisual, skin.id);
-    state.localVisual.userData.name = state.myName;
-    state.localVisual.userData.nameEl.textContent = state.myName;
-  }
+  ensureLocalAvatar();
 
   state.joined = true;
   state.started = true;
@@ -972,7 +1127,9 @@ function joinGameFromOverlay() {
 }
 
 function applySelectedPreviewSkin() {
-  if (!previewSkin().unlocked) return;
+  const skin = previewSkin();
+  if (!skin.unlocked) return;
+
   state.selectedSkinIndex = state.previewSkinIndex;
   saveProfile();
   renderSkinCard();
@@ -1010,8 +1167,15 @@ function setupUiEvents() {
     refreshMenuStats();
   });
 
-  ui.openSkinsBtn?.addEventListener('click', showSkins);
-  ui.skinsBackBtn?.addEventListener('click', showMenu);
+  ui.openSkinsBtn?.addEventListener('click', () => {
+    state.previewSkinIndex = state.selectedSkinIndex;
+    showSkins();
+  });
+
+  ui.skinsBackBtn?.addEventListener('click', () => {
+    if (state.started || state.joined) showMenu();
+    else showOverlay();
+  });
 
   ui.skinPrevBtn?.addEventListener('click', () => {
     state.previewSkinIndex = (state.previewSkinIndex - 1 + STARTER_SKINS.length) % STARTER_SKINS.length;
@@ -1059,6 +1223,7 @@ function setupUiEvents() {
 function setupInputEvents() {
   window.addEventListener('keydown', (e) => {
     if (state.focusedChat) return;
+
     const t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
 
@@ -1072,7 +1237,7 @@ function setupInputEvents() {
 
     if (k === ' ') state.jumpQueued = true;
 
-    if (k === 'enter' && ui.chatInput) {
+    if (k === 'enter' && ui.chatInput && state.started) {
       ui.chatInput.focus();
       e.preventDefault();
     }
@@ -1120,6 +1285,7 @@ function setupInputEvents() {
 
     ui.joystickBase.addEventListener('pointermove', (e) => {
       if (!state.joystick.active || e.pointerId !== state.joystick.id) return;
+
       const rect = ui.joystickBase.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
@@ -1190,6 +1356,7 @@ function animate() {
   if (state.started && state.localVisual) {
     updateLocalPlayer(delta, time);
     updateRemoteVisuals(delta);
+    updateOfflineBots(time);
 
     const p = state.localVisual.position.clone();
     const desiredCam = new THREE.Vector3(
@@ -1224,7 +1391,9 @@ window.addEventListener('resize', () => {
 loadProfile();
 state.myName = state.profile.bestName || 'Guest';
 
-if (ui.nameInput) ui.nameInput.value = state.myName;
+if (ui.nameInput) {
+  ui.nameInput.value = state.myName;
+}
 
 renderSkinCard();
 updateSkinPreview();
@@ -1232,10 +1401,9 @@ refreshMenuStats();
 setupUiEvents();
 setupInputEvents();
 
-if (isTouch && ui.joystickBase) {
-  ui.joystickBase.style.display = '';
-} else if (ui.joystickBase) {
-  ui.joystickBase.style.display = 'none';
+if (!isTouch) {
+  if (ui.joystickBase) ui.joystickBase.style.display = 'none';
+  if (ui.jumpBtn) ui.jumpBtn.style.display = 'none';
 }
 
 showOverlay();
