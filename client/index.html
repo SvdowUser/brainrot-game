@@ -1,26 +1,875 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
   <title>tralala.io</title>
-  <meta http-equiv="refresh" content="0; url=./client/" />
+  <meta name="theme-color" content="#07131d" />
   <style>
-    html, body { margin:0; height:100%; font-family: Inter, system-ui, Arial, sans-serif; background:#050c18; color:#eaf3ff; }
-    .wrap { min-height:100%; display:grid; place-items:center; padding:24px; text-align:center; }
-    a { color:#7fd6ff; }
+    :root {
+      --bg: #07131d;
+      --panel: rgba(10, 21, 32, 0.78);
+      --panel-2: rgba(12, 28, 42, 0.88);
+      --stroke: rgba(255,255,255,0.12);
+      --text: #eef7ff;
+      --muted: #a9c3d8;
+      --accent: #67c8ff;
+      --accent-2: #7de5c4;
+      --danger: #ff8ba7;
+      --shadow: 0 18px 48px rgba(0,0,0,.34);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, Arial, sans-serif;
+    }
+
+    body {
+      position: fixed;
+      inset: 0;
+      touch-action: none;
+    }
+
+    canvas#scene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: linear-gradient(180deg, #80d8ff 0%, #9ae4ff 45%, #c7efff 100%);
+    }
+
+    .hidden { display: none !important; }
+
+    .ui-root {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .panel {
+      pointer-events: auto;
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .overlay-center {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .overlay-center > .panel {
+      pointer-events: auto;
+      width: min(460px, calc(100vw - 28px));
+      padding: 22px;
+    }
+
+    .brand {
+      font-size: clamp(40px, 8vw, 64px);
+      font-weight: 900;
+      line-height: .9;
+      letter-spacing: -.04em;
+      margin: 0 0 8px;
+      text-align: center;
+      text-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+
+    .brand .dot {
+      color: #ffd253;
+    }
+
+    .sub {
+      margin: 0 0 16px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .top-bar {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .portrait-card,
+    .top-actions,
+    .server-pill,
+    .hud-strip,
+    .leaderboard-card,
+    .chat-card,
+    .tutorial-card,
+    .settings-panel,
+    .mobile-controls {
+      pointer-events: auto;
+    }
+
+    .portrait-card {
+      min-width: 250px;
+      padding: 12px 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .portrait {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      overflow: hidden;
+      flex: 0 0 auto;
+      background: linear-gradient(145deg, #163044, #0d2231);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    .portrait canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .portrait-meta small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .portrait-meta strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .server-pill,
+    .icon-btn {
+      height: 48px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: var(--panel);
+      color: var(--text);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+
+    .server-pill {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      width: 48px;
+      display: inline-grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .icon-btn:hover,
+    .primary-btn:hover,
+    .ghost-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .screen-stack {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .screen {
+      width: min(460px, calc(100vw - 28px));
+      padding: 22px;
+      pointer-events: auto;
+    }
+
+    .panel-title {
+      margin: 0 0 14px;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .stat-box small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .stat-box strong {
+      font-size: 20px;
+    }
+
+    .hero-preview,
+    .skin-preview-big {
+      margin: 12px auto 18px;
+      width: 116px;
+      height: 116px;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 20px 34px rgba(0,0,0,.25);
+      background: linear-gradient(145deg, #fff0a6, #67c8ff);
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .input {
+      width: 100%;
+      height: 52px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 0 16px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .input::placeholder {
+      color: #8fb1c8;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .primary-btn,
+    .ghost-btn {
+      height: 52px;
+      border-radius: 16px;
+      border: 0;
+      padding: 0 18px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease, filter .15s ease;
+    }
+
+    .primary-btn {
+      color: #082033;
+      background: linear-gradient(180deg, #98e7ff 0%, #4db5ff 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 10px 20px rgba(50,125,255,.25);
+      flex: 1;
+    }
+
+    .ghost-btn {
+      color: var(--text);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      flex: 1;
+    }
+
+    .start-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .skin-carousel {
+      display: grid;
+      grid-template-columns: 52px 1fr 52px;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0 18px;
+    }
+
+    .skin-arrow {
+      height: 52px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-size: 24px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .skin-card-wrap {
+      min-height: 160px;
+    }
+
+    .skin-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08);
+      min-height: 156px;
+    }
+
+    .skin-preview {
+      width: 112px;
+      height: 112px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: linear-gradient(145deg, #153042, #0a1c29);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    .skin-preview canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .skin-meta {
+      min-width: 0;
+    }
+
+    .skin-name {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .skin-desc {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .skin-lock {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.36);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .skin-sub {
+      margin: 10px 0 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .hud-grid {
+      position: fixed;
+      top: 78px;
+      left: 14px;
+      right: 14px;
+      display: grid;
+      grid-template-columns: minmax(240px, 340px) minmax(200px, 320px);
+      justify-content: space-between;
+      align-items: start;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .hud-strip {
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0,1fr));
+      gap: 10px;
+    }
+
+    .hud-item {
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.08);
+      min-width: 0;
+    }
+
+    .hud-item small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .hud-item strong {
+      display: block;
+      font-size: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .leaderboard-card {
+      padding: 12px 14px;
+    }
+
+    .leaderboard-card h3,
+    .chat-card h3,
+    .tutorial-card h3,
+    .settings-panel h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+
+    .leaderboard-card ol {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .bottom-ui {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .chat-card {
+      width: min(420px, calc(100vw - 28px));
+      padding: 12px 12px 10px;
+    }
+
+    .chat-log {
+      height: 132px;
+      overflow: auto;
+      border-radius: 16px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .msg + .msg {
+      margin-top: 6px;
+    }
+
+    .chat-row {
+      display: grid;
+      grid-template-columns: 1fr 96px;
+      gap: 10px;
+    }
+
+    .mini-map-wrap {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .mini-map {
+      width: 118px;
+      height: 118px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    .tutorial-card {
+      position: fixed;
+      top: 50%;
+      right: 18px;
+      transform: translateY(-50%);
+      width: min(280px, calc(100vw - 36px));
+      padding: 14px;
+    }
+
+    .tutorial-card p,
+    .settings-panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .tutorial-close {
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 72px;
+      right: 18px;
+      width: min(280px, calc(100vw - 36px));
+      padding: 14px;
+    }
+
+    .mobile-controls {
+      position: fixed;
+      right: 16px;
+      bottom: 18px;
+      display: flex;
+      align-items: end;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .joystick {
+      width: 126px;
+      height: 126px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      position: relative;
+      box-shadow: var(--shadow);
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .joystick-knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #9be4ff 0%, #4ab6ff 100%);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 10px 20px rgba(25,130,255,.28);
+    }
+
+    .jump-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      background: rgba(255,255,255,.08);
+      font-size: 14px;
+      font-weight: 900;
+      pointer-events: auto;
+      box-shadow: var(--shadow);
+    }
+
+    .overlay-labels {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .nameplate,
+    .bubble {
+      position: fixed;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+      z-index: 30;
+      text-shadow: 0 2px 8px rgba(0,0,0,.35);
+    }
+
+    .nameplate {
+      padding: 4px 10px;
+      border-radius: 999px;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      background: rgba(10, 21, 32, .45);
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .bubble {
+      max-width: 240px;
+      white-space: normal;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 16px;
+      color: #0b1a25;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 10px 24px rgba(0,0,0,.24);
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    @media (max-width: 960px) {
+      .hud-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tutorial-card,
+      .settings-panel {
+        right: 14px;
+        left: 14px;
+        width: auto;
+      }
+
+      .tutorial-card {
+        top: auto;
+        bottom: 170px;
+        transform: none;
+      }
+
+      .bottom-ui {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .chat-card {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .portrait-card,
+      .server-pill {
+        width: 100%;
+      }
+
+      .top-actions {
+        justify-content: space-between;
+      }
+
+      .hud-strip {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+
+      .leaderboard-card {
+        order: 2;
+      }
+
+      .mobile-controls {
+        display: flex;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div>
-      <h1>tralala.io wird geladen…</h1>
-      <p>Falls die automatische Weiterleitung nicht klappt, tippe hier:</p>
-      <p><a href="./client/">Spiel starten</a></p>
+  <canvas id="scene"></canvas>
+
+  <div class="ui-root">
+    <div id="overlayLabels" class="overlay-labels"></div>
+
+    <div class="top-bar">
+      <div class="panel portrait-card">
+        <div class="portrait">
+          <canvas id="portraitCanvas" width="96" height="96"></canvas>
+        </div>
+        <div class="portrait-meta">
+          <small>LOS TRALALERITOS HUB</small>
+          <strong id="portraitName">Guest</strong>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div id="serverBadge" class="server-pill">beach-01 · offline</div>
+        <button id="settingsBtn" class="icon-btn" type="button">⚙</button>
+      </div>
+    </div>
+
+    <div id="startOverlay" class="overlay-center">
+      <div class="panel">
+        <h1 class="brand">tralala<span class="dot">.io</span></h1>
+        <p class="sub">Choose your name, pick a starter skin, and enter the beach hub.</p>
+
+        <div class="skin-carousel">
+          <button id="skinPrev" class="skin-arrow" type="button">‹</button>
+          <div id="skinCardWrap" class="skin-card-wrap"></div>
+          <button id="skinNext" class="skin-arrow" type="button">›</button>
+        </div>
+
+        <div class="field">
+          <label for="nameInput">Display name</label>
+          <input id="nameInput" class="input" type="text" placeholder="Enter your name" maxlength="16" />
+        </div>
+
+        <div class="start-actions">
+          <button id="enterBtn" class="primary-btn" type="button">Enter hub</button>
+          <button id="openSkinsBtn" class="ghost-btn" type="button">Skins</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-stack">
+      <div id="menuScreen" class="panel screen hidden">
+        <h2 class="panel-title">Main Menu</h2>
+
+        <div class="stat-row">
+          <div class="stat-box">
+            <small>Coins</small>
+            <strong id="menuCoinValue">0</strong>
+          </div>
+          <div class="stat-box">
+            <small>Best score</small>
+            <strong id="bestScoreValue">0</strong>
+          </div>
+        </div>
+
+        <div id="heroCube" class="hero-preview"></div>
+
+        <div class="start-actions">
+          <button id="playBtn" class="primary-btn" type="button">Play</button>
+          <button id="openSkinsBtn" class="ghost-btn hidden" type="button">Skins</button>
+        </div>
+      </div>
+
+      <div id="skinsScreen" class="panel screen hidden">
+        <h2 class="panel-title">Skins</h2>
+        <div id="skinPreviewCube" class="skin-preview-big"></div>
+        <div style="text-align:center; margin-bottom:6px; font-size:22px; font-weight:900;" id="skinName">Beach Blue</div>
+        <div id="skinStatus" class="skin-sub">Unlocked</div>
+
+        <div class="skin-carousel" style="margin-top:18px;">
+          <button id="skinPrevBtn" class="skin-arrow" type="button">‹</button>
+          <div></div>
+          <button id="skinNextBtn" class="skin-arrow" type="button">›</button>
+        </div>
+
+        <div class="start-actions">
+          <button id="skinsBackBtn" class="ghost-btn" type="button">Back</button>
+          <button id="skinSelectBtn" class="primary-btn" type="button">Select</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameHud" class="hidden">
+      <div class="hud-grid">
+        <div class="panel hud-strip">
+          <div class="hud-item">
+            <small>Coins</small>
+            <strong id="coinValue">0</strong>
+          </div>
+          <div class="hud-item">
+            <small>Score</small>
+            <strong id="scoreValue">0</strong>
+          </div>
+          <div class="hud-item">
+            <small>Area</small>
+            <strong id="areaValue">Hub</strong>
+          </div>
+          <div class="hud-item">
+            <small>Name</small>
+            <strong id="playerName">Guest</strong>
+          </div>
+          <div class="hud-item">
+            <small>Status</small>
+            <strong id="livesValue">Ready</strong>
+          </div>
+        </div>
+
+        <div class="panel leaderboard-card">
+          <h3>Leaderboard</h3>
+          <ol id="leaderboardList"></ol>
+        </div>
+      </div>
+
+      <div class="bottom-ui">
+        <div class="panel chat-card" id="chatPanel">
+          <h3>Lobby chat</h3>
+          <div id="chatLog" class="chat-log"></div>
+
+          <div class="chat-row">
+            <input id="chatInput" class="input" type="text" placeholder="Type a message…" maxlength="120" />
+            <button id="chatSend" class="primary-btn" type="button">Send</button>
+          </div>
+
+          <div class="mini-map-wrap">
+            <canvas id="miniMap" class="mini-map" width="128" height="128"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div id="tutorialCard" class="panel tutorial-card hidden">
+        <h3>How to move</h3>
+        <p>Drag to rotate the camera. Move with WASD or the joystick. Jump with Space or the jump button. Chat with Enter.</p>
+        <button id="closeTutorialBtn" class="ghost-btn tutorial-close" type="button">Close</button>
+      </div>
+    </div>
+
+    <div id="settingsPanel" class="panel settings-panel hidden">
+      <h3>Settings</h3>
+      <p>This panel is a placeholder for sound, graphics, and controls. The button should now open and close correctly.</p>
+    </div>
+
+    <div class="mobile-controls" id="mobileControls">
+      <div id="joystickBase" class="joystick">
+        <div id="joystickKnob" class="joystick-knob"></div>
+      </div>
+      <button id="jumpBtn" class="jump-btn" type="button">JUMP</button>
     </div>
   </div>
-  <script>
-    window.location.replace('./client/');
-  </script>
+
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
