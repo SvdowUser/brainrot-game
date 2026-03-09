@@ -1,9 +1,21 @@
+# Los Tralaleritos Hub - Full Stack Starter
 # tralala.io - 3D Territory Multiplayer Prototype
 
+This package gives you a browser-based 3D hub and a real Node.js multiplayer server.
 Ein professioneller, erweiterbarer 3D-Prototyp im Stil von Territory-Capture-Games.
 
+## What's included
 ## Features
 
+- Guest name entry
+- Starter skin picker (3 unlocked, 3 locked placeholders)
+- 3D beach hub with structured areas
+- Jumping and walk animation
+- Global chat + overhead chat bubbles
+- MMO-style nameplates
+- Mobile joystick + jump button
+- Real multiplayer with Socket.IO
+- Room cap at 20 players
 - 3D Grid-Map (größer als vorher)
 - Trail schließen => Fläche einnehmen
 - Farb-Skins (später als Würfel-Skins/Model-Skins erweiterbar)
@@ -14,20 +26,38 @@ Ein professioneller, erweiterbarer 3D-Prototyp im Stil von Territory-Capture-Gam
 - Kamera folgt dem eigenen Spieler
 - Austauschbare PNG-Icons in `client/assets/ui/`
 
+## Run locally
 ## Lokal starten
 
+1. Open the `server` folder
+2. Install dependencies:
+   npm install
+3. Start the server:
+   npm start
+4. Open `http://localhost:3000`
+5. Open the same URL on a second device on the same network if your host is reachable
 ```bash
 cd server
 npm install
 npm start
 ```
 
+## GitHub Pages note
 Dann öffnen:
 
+GitHub Pages can host the frontend only. The Node.js multiplayer server must run separately on a Node host.
+If you want to host the frontend on GitHub Pages, update `SERVER_URL` in `client/src/main.js` to your live backend URL.
 - `http://localhost:3000`
 
+## Suggested next upgrades
 ## Hetzner / Public Server
 
+- Replace primitive player model with GLB/GLTF shark character
+- Add real meme gallery media panels
+- Add parkour checkpoints and timing
+- Add skin inventory and unlocks
+- Add server browser with multiple rooms
+- Add voice chat later with WebRTC
 Dein Server laut Angabe:
 
 - IPv4: `89.167.75.175`
