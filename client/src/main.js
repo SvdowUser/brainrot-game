@@ -114,7 +114,6 @@ function drawBackground(time) {
     ctx.lineTo(w, y);
     ctx.stroke();
   }
-}
 
   const shadowY = horizon - 8;
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
@@ -134,35 +133,6 @@ function renderSkinCard() {
     skinRequirement.textContent = `Requires best score ${skin.req}`;
     skinSelectBtn.disabled = true;
   }
-
-  state.players.forEach((p) => {
-    const x = ((p.x + HALF) / (GRID * CELL)) * w;
-    const y = ((p.z + HALF) / (GRID * CELL)) * h;
-    mmCtx.fillStyle = p.id === state.myId ? '#ffffff' : '#ffe58f';
-    mmCtx.beginPath();
-    mmCtx.arc(x, y, p.id === state.myId ? 3.5 : 2.3, 0, Math.PI * 2);
-    mmCtx.fill();
-  });
-}
-
-function updateRemoteVisuals() {
-  state.players.forEach((p, id) => {
-    if (id === state.myId) return;
-    let mesh = state.remotes.get(id);
-    if (!mesh) {
-      mesh = createAvatar(SKINS[p.skinIndex % SKINS.length], 0.95);
-      state.remotes.set(id, mesh);
-    }
-    mesh.position.lerp(new THREE.Vector3(p.x, 0, p.z), 0.28);
-    mesh.rotation.y = THREE.MathUtils.lerp(mesh.rotation.y, p.rot || 0, 0.22);
-  });
-
-  state.remotes.forEach((mesh, id) => {
-    if (!state.players.has(id)) {
-      scene.remove(mesh);
-      state.remotes.delete(id);
-    }
-  });
 }
 
 function applySkin(el, skin) {
