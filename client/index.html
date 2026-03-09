@@ -12,18 +12,19 @@
     :root {
       --bg: #07131d;
       --panel: rgba(10, 21, 32, 0.78);
-      --panel-2: rgba(12, 28, 42, 0.88);
       --stroke: rgba(255,255,255,0.12);
       --text: #eef7ff;
       --muted: #a9c3d8;
       --accent: #67c8ff;
-      --accent-2: #7de5c4;
-      --danger: #ff8ba7;
       --shadow: 0 18px 48px rgba(0,0,0,.34);
       --radius: 22px;
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     html, body {
       margin: 0;
       width: 100%;
@@ -38,6 +39,7 @@
       position: fixed;
       inset: 0;
       touch-action: none;
+      overscroll-behavior: none;
     }
 
     canvas#scene {
@@ -49,7 +51,9 @@
       background: linear-gradient(180deg, #80d8ff 0%, #9ae4ff 45%, #c7efff 100%);
     }
 
-    .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
 
     .ui-root {
       position: fixed;
@@ -201,12 +205,6 @@
       font-size: 18px;
     }
 
-    .icon-btn:hover,
-    .primary-btn:hover,
-    .ghost-btn:hover {
-      transform: translateY(-1px);
-    }
-
     .screen-stack {
       position: fixed;
       inset: 0;
@@ -288,16 +286,11 @@
       padding: 0 16px;
       font-size: 16px;
       outline: none;
+      touch-action: manipulation;
     }
 
     .input::placeholder {
       color: #8fb1c8;
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
     }
 
     .primary-btn,
@@ -309,7 +302,6 @@
       font-size: 16px;
       font-weight: 800;
       cursor: pointer;
-      transition: transform .15s ease, opacity .15s ease, filter .15s ease;
     }
 
     .primary-btn {
@@ -625,12 +617,12 @@
     .bubble {
       position: fixed;
       transform: translate(-50%, -50%);
-      white-space: nowrap;
       z-index: 30;
       text-shadow: 0 2px 8px rgba(0,0,0,.35);
     }
 
     .nameplate {
+      white-space: nowrap;
       padding: 4px 10px;
       border-radius: 999px;
       color: white;
@@ -750,7 +742,16 @@
 
         <div class="field">
           <label for="nameInput">Display name</label>
-          <input id="nameInput" class="input" type="text" placeholder="Enter your name" maxlength="16" />
+          <input
+            id="nameInput"
+            class="input"
+            type="text"
+            placeholder="Enter your name"
+            maxlength="16"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+          />
         </div>
 
         <div class="start-actions">
@@ -779,14 +780,13 @@
 
         <div class="start-actions">
           <button id="playBtn" class="primary-btn" type="button">Play</button>
-          <button id="openSkinsBtn" class="ghost-btn hidden" type="button">Skins</button>
         </div>
       </div>
 
       <div id="skinsScreen" class="panel screen hidden">
         <h2 class="panel-title">Skins</h2>
         <div id="skinPreviewCube" class="skin-preview-big"></div>
-        <div style="text-align:center; margin-bottom:6px; font-size:22px; font-weight:900;" id="skinName">Beach Blue</div>
+        <div id="skinName" style="text-align:center; margin-bottom:6px; font-size:22px; font-weight:900;">Beach Blue</div>
         <div id="skinStatus" class="skin-sub">Unlocked</div>
 
         <div class="skin-carousel" style="margin-top:18px;">
@@ -839,7 +839,16 @@
           <div id="chatLog" class="chat-log"></div>
 
           <div class="chat-row">
-            <input id="chatInput" class="input" type="text" placeholder="Type a message…" maxlength="120" />
+            <input
+              id="chatInput"
+              class="input"
+              type="text"
+              placeholder="Type a message…"
+              maxlength="120"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+            />
             <button id="chatSend" class="primary-btn" type="button">Send</button>
           </div>
 
@@ -858,7 +867,7 @@
 
     <div id="settingsPanel" class="panel settings-panel hidden">
       <h3>Settings</h3>
-      <p>This panel is a placeholder for sound, graphics, and controls. The button should now open and close correctly.</p>
+      <p>This panel is a placeholder for sound, graphics, and controls. The button should open and close correctly.</p>
     </div>
 
     <div class="mobile-controls" id="mobileControls">
