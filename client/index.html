@@ -4,22 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>tralala.io</title>
-  <link rel="stylesheet" href="./style.css?v=20260308x" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <canvas id="scene"></canvas>
 
   <div id="uiRoot">
+
+    <!-- MENU SCREEN -->
     <section id="menuScreen" class="screen">
       <header class="topBar">
-        <div class="pill coinPill"><span id="menuCoins">0</span></div>
+        <div class="pill coinPill">🪙 <span id="menuCoins">0</span></div>
         <button id="settingsBtn" class="iconBtn" type="button" aria-label="Settings">⚙</button>
       </header>
-
       <main class="menuMain">
         <h1 class="logo">tralala<span>.io</span></h1>
         <div class="heroWrap"><div id="heroCube" class="cube"></div></div>
-
         <div class="nameRow">
           <input id="nameInput" maxlength="16" placeholder="Guest" autocomplete="off" />
           <div class="pill small">Best <span id="bestScore">0</span></div>
@@ -28,18 +28,15 @@
           <span id="playerName">Guest</span>
           <span id="livesValue">❤❤❤</span>
         </div>
-      </aside>
-
-      <canvas id="miniMap" width="128" height="128"></canvas>
-
         <button id="playBtn" class="playBtn" type="button">PLAY</button>
         <button id="openSkinsBtn" class="subBtn" type="button">Skins</button>
       </main>
     </section>
 
+    <!-- SKINS SCREEN -->
     <section id="skinsScreen" class="screen hidden">
       <header class="skinsHead">
-        <button id="skinsBackBtn" class="subBtn" type="button">Back</button>
+        <button id="skinsBackBtn" class="subBtn" type="button">← Back</button>
         <h2>Skins</h2>
       </header>
       <div class="skinsBody">
@@ -56,16 +53,42 @@
       </footer>
     </section>
 
+    <!-- SETTINGS OVERLAY -->
     <section id="settingsSheet" class="overlay hidden">
       <div class="dialog">
         <h3>Settings</h3>
-        <p>Minimal prototype menu restored.</p>
+        <p>tralala.io — multiplayer territory game</p>
+        <p id="serverBadge">Connecting...</p>
         <button id="settingsCloseBtn" class="subBtn" type="button">Close</button>
       </div>
     </section>
+
+    <!-- GAME HUD -->
+    <section id="gameHud" class="screen hidden">
+      <header class="hudTop">
+        <div class="pill hudPill">🪙 <span id="coinValue">0</span></div>
+        <div class="pill hudPill">Score <span id="scoreValue">0</span></div>
+        <div class="pill hudPill">Area <span id="areaValue">0%</span></div>
+        <div class="pill hudPill" id="leaderboardToggle">Leaderboard</div>
+      </header>
+
+      <!-- Leaderboard panel -->
+      <div id="leaderboardPanel" class="leaderboardPanel hidden">
+        <div class="lbTitle">🏆 Top Players</div>
+        <ul id="leaderboardList"></ul>
+      </div>
+
+      <!-- Tutorial card -->
+      <div id="tutorialCard" class="tutorialCard hidden">
+        <div class="tutIcon">🌀</div>
+        <p><strong>Close a loop to capture territory.</strong></p>
+        <button id="closeTutorialBtn" class="tutClose" type="button">✕</button>
+      </div>
+    </section>
+
   </div>
 
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-  <script type="module" src="./src/main.js?v=20260310a"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
