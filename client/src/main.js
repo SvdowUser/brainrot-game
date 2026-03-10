@@ -183,18 +183,20 @@ function drawFrame(time) {
   ctx.fillStyle = 'rgba(0,0,0,0.12)';
   ctx.fillRect(0, horizon, w, h - horizon);
 
-  // Grid lines
-  const step = Math.max(20, Math.floor(w / 40));
-  ctx.strokeStyle = 'rgba(8, 55, 62, 0.45)';
+  // Grid lines - scroll with player position
+  const cellSize = Math.floor(w / 20);
+  const ox = ((playerX * cellSize) % cellSize + cellSize) % cellSize;
+  const oz = ((playerZ * cellSize) % cellSize + cellSize) % cellSize;
+  ctx.strokeStyle = 'rgba(8, 55, 62, 0.55)';
   ctx.lineWidth = 1;
-  for (let x = -w; x < w * 2; x += step) {
+  for (let x = -cellSize + (w/2 - ox) % cellSize - cellSize; x < w * 2; x += cellSize) {
     ctx.beginPath();
     ctx.moveTo(x, h);
-    ctx.lineTo(w / 2 + (x - w / 2) * 0.14, horizon);
+    ctx.lineTo(w / 2 + (x - w / 2) * 0.05, horizon);
     ctx.stroke();
   }
-  for (let i = 0; i < 18; i++) {
-    const p = i / 18;
+  for (let i = 0; i < 22; i++) {
+    const p = ((i / 22) + oz / cellSize / 22) % 1;
     const y = horizon + (p * p) * (h - horizon);
     ctx.beginPath();
     ctx.moveTo(0, y);
