@@ -88,6 +88,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#dbeafe;font-family:
 
 /* Ping */
 #ping{position:absolute;bottom:14px;left:14px;font-size:.7rem;font-weight:700;color:#94a3b8;z-index:60;}
+
+/* Floating name labels */
+.name-label{position:absolute;pointer-events:none;z-index:55;white-space:nowrap;font-family:'Fredoka One',cursive;font-size:.75rem;letter-spacing:.5px;transform:translateX(-50%);padding:2px 7px;border-radius:20px;backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,.4);box-shadow:0 2px 8px rgba(0,0,0,.15);transition:opacity .2s;}
+#name-labels{position:absolute;inset:0;pointer-events:none;z-index:55;overflow:hidden;}
 </style>
 </head>
 <body>
@@ -140,6 +144,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#dbeafe;font-family:
     <div class="sk" id="sk2" onclick="useSkill(2)">💨<span class="sk-key">R</span></div>
   </div>
   <div id="ping">0ms</div>
+  <div id="name-labels"></div>
 </div>
 
 <!-- DEATH -->
@@ -318,7 +323,7 @@ function clearTrailMeshes(sid){
 // ═══════════════════════════════════════════
 const entityMeshes=new Map();
 
-function makeEntityMesh(hex,skinIdx){
+function makeEntityMesh(hex,skinIdx,name){
   const g=new THREE.Group();
   const c=new THREE.Color(hex);
   const mat=new THREE.MeshStandardMaterial({color:c,roughness:.25,metalness:.6});
@@ -326,13 +331,13 @@ function makeEntityMesh(hex,skinIdx){
   body.castShadow=true;body.position.y=.9;g.add(body);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(.88,.08,6,32),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.85,transparent:true,opacity:.6}));
   ring.rotation.x=Math.PI/2;ring.position.y=.1;g.add(ring);
-  g._body=body;g._mat=mat;g._ring=ring;
+  g._body=body;g._mat=mat;g._ring=ring;g._name=name;g._color=hex;
   return g;
 }
 
-function getOrCreateEntityMesh(sid,hex,skinIdx){
+function getOrCreateEntityMesh(sid,hex,skinIdx,name){
   if(entityMeshes.has(sid)) return entityMeshes.get(sid);
-  const m=makeEntityMesh(hex,skinIdx);scene.add(m);entityMeshes.set(sid,m);
+  const m=makeEntityMesh(hex,skinIdx,name);scene.add(m);entityMeshes.set(sid,m);
   return m;
 }
 function removeEntityMesh(sid){
@@ -425,8 +430,8 @@ function joinGame(){
 
     // Build players
     data.players.forEach(p=>{
-      playerStates.set(p.sid,{x:p.x,y:p.y,alive:p.alive,score:p.score,color:p.color,skin:p.skin,trail:p.trail||[],dx:1,dy:0,_tx:cw(p.x,p.y).x,_tz:cw(p.x,p.y).z,name:p.name});
-      const m=getOrCreateEntityMesh(p.sid,p.color,p.skin);
+      playerStates.set(p.sid,{x:p.x,y:p.y,alive:p.alive,score:p.score,color:p.color,skin:p.skin,trail:p.trail||[],dx:1,dy:0,_tx:cw(p.x,p.y).x,_tz:cw(p.x,p.y).z,name:p.name,isBot:p.isBot});
+      const m=getOrCreateEntityMesh(p.sid,p.color,p.skin,p.name);
       const{x,z}=cw(p.x,p.y);m.position.set(x,0,z);
     });
 
@@ -480,8 +485,8 @@ function joinGame(){
   });
 
   socket.on('playerJoined',(p)=>{
-    playerStates.set(p.sid,{x:p.x,y:p.y,alive:true,score:0,color:p.color,skin:p.skin,trail:[],dx:1,dy:0,_tx:cw(p.x,p.y).x,_tz:cw(p.x,p.y).z,name:p.name});
-    const m=getOrCreateEntityMesh(p.sid,p.color,p.skin);
+    playerStates.set(p.sid,{x:p.x,y:p.y,alive:true,score:0,color:p.color,skin:p.skin,trail:[],dx:1,dy:0,_tx:cw(p.x,p.y).x,_tz:cw(p.x,p.y).z,name:p.name,isBot:p.isBot});
+    const m=getOrCreateEntityMesh(p.sid,p.color,p.skin,p.name);
     const{x,z}=cw(p.x,p.y);m.position.set(x,0,z);
   });
 
@@ -640,6 +645,44 @@ function updateSkillUI(){
   tickParts(dt);
   drawMinimap();
   renderer.render(scene,camera);
+
+  // ── Floating name labels ──
+  const labelsDiv=document.getElementById('name-labels');
+  const W=innerWidth,H=innerHeight;
+  // Reuse/create label elements
+  const activeSids=new Set();
+  for(const[sid,state]of playerStates){
+    if(!state.alive)continue;
+    activeSids.add(sid);
+    const m=entityMeshes.get(sid);if(!m)continue;
+    // Project 3D pos to screen
+    const pos3=new THREE.Vector3(m.position.x,m.position.y+2.4,m.position.z);
+    pos3.project(camera);
+    const sx=(pos3.x+1)/2*W, sy=(-pos3.y+1)/2*H;
+    // Only show if in front of camera
+    if(pos3.z>1){let el=document.getElementById('nl-'+sid);if(el)el.style.display='none';continue;}
+    let el=document.getElementById('nl-'+sid);
+    if(!el){
+      el=document.createElement('div');
+      el.id='nl-'+sid;
+      el.className='name-label';
+      labelsDiv.appendChild(el);
+    }
+    const isMine=sid===mySid;
+    el.style.left=sx+'px';
+    el.style.top=sy+'px';
+    el.style.color=state.color;
+    el.style.background=isMine?'rgba(255,255,255,.92)':'rgba(255,255,255,.75)';
+    el.style.fontWeight=isMine?'bold':'normal';
+    el.style.fontSize=isMine?'.82rem':'.72rem';
+    el.style.display='block';
+    el.textContent=isMine?'★ '+(state.name||'?'):state.name||'?';
+  }
+  // Remove labels for gone players
+  for(const el of labelsDiv.querySelectorAll('.name-label')){
+    const sid=el.id.replace('nl-','');
+    if(!activeSids.has(sid))el.remove();
+  }
 })(0);
 
 addEventListener('resize',()=>{
