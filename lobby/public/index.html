@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,67 +7,301 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;}
-body{background:linear-gradient(150deg,#e0f2fe 0%,#f0fdf4 60%,#fef9c3 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;background:linear-gradient(150deg,#e0f2fe 0%,#f0fdf4 60%,#fef9c3 100%);}
 
-.logo{font-family:'Fredoka One',cursive;font-size:clamp(2.5rem,7vw,5rem);color:#1e3a5f;text-shadow:0 3px 0 rgba(0,0,0,.07);animation:bob 2.8s ease-in-out infinite;margin-bottom:4px;}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-.tagline{font-size:.85rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:28px;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+.screen.active{display:flex;}
 
-.skin-picker{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
-.sp-arrow{width:36px;height:36px;border-radius:50%;border:none;background:rgba(30,58,95,.1);cursor:pointer;font-size:1.1rem;color:#1e3a5f;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.sp-arrow:hover{background:rgba(30,58,95,.2);transform:scale(1.1);}
+/* ── SHARED ── */
+.logo{font-family:'Fredoka One',cursive;font-size:clamp(2rem,6vw,4rem);color:#1e3a5f;animation:bob 2.8s ease-in-out infinite;margin-bottom:4px;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.tagline{font-size:.8rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:24px;}
+.card{background:rgba(255,255,255,.9);backdrop-filter:blur(16px);border-radius:20px;border:1px solid rgba(255,255,255,.9);box-shadow:0 8px 32px rgba(0,0,0,.08);padding:28px 32px;width:100%;max-width:380px;}
+.inp{width:100%;background:white;border:2px solid #e2e8f0;border-radius:12px;padding:11px 16px;font-size:.95rem;font-family:'Nunito',sans-serif;color:#1e3a5f;outline:none;margin-bottom:10px;transition:border .2s;}
+.inp:focus{border-color:#3b82f6;}
+.inp::placeholder{color:#94a3b8;}
+.btn{width:100%;padding:13px;font-size:1rem;font-family:'Fredoka One',cursive;border:none;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:8px;letter-spacing:.5px;}
+.btn-primary{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;box-shadow:0 4px 16px rgba(59,130,246,.35);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,.45);}
+.btn-secondary{background:rgba(59,130,246,.08);color:#3b82f6;border:2px solid rgba(59,130,246,.2);}
+.btn-secondary:hover{background:rgba(59,130,246,.14);}
+.btn-danger{background:rgba(239,68,68,.08);color:#ef4444;border:2px solid rgba(239,68,68,.2);}
+.err{color:#ef4444;font-size:.82rem;font-weight:700;margin-bottom:8px;min-height:18px;}
+.tab-row{display:flex;gap:0;margin-bottom:20px;border-radius:12px;overflow:hidden;border:2px solid #e2e8f0;}
+.tab{flex:1;padding:10px;text-align:center;cursor:pointer;font-weight:800;font-size:.88rem;background:white;color:#94a3b8;transition:all .2s;border:none;}
+.tab.active{background:#3b82f6;color:white;}
+.link{color:#3b82f6;cursor:pointer;font-weight:700;font-size:.85rem;text-align:center;display:block;margin-top:6px;}
+.link:hover{text-decoration:underline;}
+
+/* ── MAIN MENU ── */
+.skin-picker{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.sp-arrow{width:34px;height:34px;border-radius:50%;border:none;background:rgba(30,58,95,.1);cursor:pointer;font-size:1rem;color:#1e3a5f;transition:all .2s;}
+.sp-arrow:hover{background:rgba(30,58,95,.2);}
 .sp-cards{display:flex;gap:8px;}
-.sp-card{width:68px;height:68px;border-radius:16px;border:3px solid transparent;cursor:pointer;background:white;box-shadow:0 3px 12px rgba(0,0,0,.1);overflow:hidden;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.sp-card:hover{transform:scale(1.05);}
-.sp-card.active{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2),0 3px 12px rgba(0,0,0,.15);transform:scale(1.08);}
+.sp-card{width:64px;height:64px;border-radius:14px;border:3px solid transparent;cursor:pointer;background:white;box-shadow:0 3px 12px rgba(0,0,0,.08);overflow:hidden;transition:all .2s;}
+.sp-card.active{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2);transform:scale(1.06);}
+.btn-play{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:14px 56px;font-size:1.2rem;font-family:'Fredoka One',cursive;border-radius:100px;cursor:pointer;box-shadow:0 5px 20px rgba(59,130,246,.4);transition:all .2s;margin-bottom:8px;}
+.btn-play:hover{transform:translateY(-2px);}
+.hint{font-size:.72rem;color:#94a3b8;font-weight:700;}
 
-.name-inp{background:white;border:2px solid #e2e8f0;border-radius:14px;padding:12px 20px;font-size:1rem;font-family:'Nunito',sans-serif;color:#1e3a5f;outline:none;width:220px;text-align:center;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:border .2s;}
-.name-inp:focus{border-color:#3b82f6;}
-.name-inp::placeholder{color:#94a3b8;}
+/* ── PROFILE BAR ── */
+.profile-bar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-radius:100px;padding:8px 16px;border:1px solid rgba(255,255,255,.9);box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:16px;cursor:pointer;transition:all .2s;}
+.profile-bar:hover{background:rgba(255,255,255,.95);}
+.pb-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:.9rem;color:white;}
+.pb-info{flex:1;}
+.pb-name{font-weight:800;font-size:.88rem;color:#1e3a5f;}
+.pb-level{font-size:.72rem;color:#64748b;font-weight:700;}
+.pb-coins{display:flex;align-items:center;gap:4px;font-family:'Fredoka One',cursive;font-size:.9rem;color:#f59e0b;}
+.xp-bar-wrap{width:100%;height:5px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin-top:3px;}
+.xp-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:10px;transition:width .5s;}
 
-.btn-play{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:14px 56px;font-size:1.2rem;font-family:'Fredoka One',cursive;border-radius:100px;cursor:pointer;box-shadow:0 5px 20px rgba(59,130,246,.4);transition:all .2s;letter-spacing:.5px;margin-bottom:10px;}
-.btn-play:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(59,130,246,.5);}
-.btn-play:active{transform:translateY(0);}
-.btn-play:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+/* ── PROFILE SCREEN ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
+.stat-card{background:#f8fafc;border-radius:12px;padding:12px;text-align:center;}
+.stat-num{font-family:'Fredoka One',cursive;font-size:1.5rem;color:#1e3a5f;}
+.stat-lbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;}
+.level-badge{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.4rem;color:white;margin:0 auto 8px;box-shadow:0 4px 16px rgba(59,130,246,.35);}
+.xp-full{width:100%;height:10px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin:8px 0 4px;}
+.xp-full-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:10px;transition:width .6s;}
 
-.hint{font-size:.75rem;color:#94a3b8;font-weight:600;}
-.status{font-size:.8rem;color:#64748b;margin-top:12px;font-weight:600;}
-.status.error{color:#ef4444;}
-
-.players-online{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.7);border-radius:100px;padding:6px 14px;margin-bottom:16px;font-size:.8rem;font-weight:700;color:#475569;}
-.dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;}
+/* ── ONLINE COUNT ── */
+.online-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.7);border-radius:100px;padding:5px 12px;font-size:.78rem;font-weight:700;color:#475569;margin-bottom:14px;}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── GUEST BAR ── */
+.guest-bar{display:flex;gap:8px;margin-bottom:14px;}
+.guest-bar .btn{margin:0;padding:10px 16px;font-size:.85rem;}
 </style>
 </head>
 <body>
 
-<div class="logo">🧠 BrainRotBattle.io</div>
-<div class="tagline">Italian Brainrot Territory Battle</div>
+<!-- ── AUTH SCREEN ── -->
+<div id="s-auth" class="screen active">
+  <div class="logo">🧠 BrainRotBattle.io</div>
+  <div class="tagline">Italian Brainrot Territory Battle</div>
+  <div class="card">
+    <div class="tab-row">
+      <button class="tab active" onclick="switchTab('login')">Accedi</button>
+      <button class="tab" onclick="switchTab('register')">Registrati</button>
+    </div>
 
-<div class="players-online">
-  <div class="dot"></div>
-  <span id="onlineCount">Caricamento...</span>
+    <!-- LOGIN -->
+    <div id="tab-login">
+      <input class="inp" id="login-user" placeholder="Username o Email" autocomplete="username"/>
+      <input class="inp" id="login-pass" placeholder="Password" type="password" autocomplete="current-password"/>
+      <div class="err" id="login-err"></div>
+      <button class="btn btn-primary" onclick="doLogin()">Accedi 🍕</button>
+      <button class="btn btn-secondary" onclick="playAsGuest()">Gioca come ospite</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="tab-register" style="display:none">
+      <input class="inp" id="reg-user" placeholder="Username (3-16 caratteri)" autocomplete="username"/>
+      <input class="inp" id="reg-email" placeholder="Email" type="email" autocomplete="email"/>
+      <input class="inp" id="reg-pass" placeholder="Password (min. 6 caratteri)" type="password" autocomplete="new-password"/>
+      <div class="err" id="reg-err"></div>
+      <button class="btn btn-primary" onclick="doRegister()">Crea Account 🎮</button>
+    </div>
+  </div>
 </div>
 
-<div class="skin-picker">
-  <button class="sp-arrow" onclick="shiftSkin(-1)">◀</button>
-  <div class="sp-cards" id="spCards"></div>
-  <button class="sp-arrow" onclick="shiftSkin(1)">▶</button>
+<!-- ── MAIN MENU ── -->
+<div id="s-menu" class="screen">
+  <div class="logo">🧠 BrainRotBattle.io</div>
+
+  <!-- Logged-in profile bar -->
+  <div class="profile-bar" id="profile-bar" onclick="showScreen('s-profile')">
+    <div class="pb-avatar" id="pb-avatar">?</div>
+    <div class="pb-info">
+      <div class="pb-name" id="pb-name">-</div>
+      <div class="xp-bar-wrap"><div class="xp-bar" id="pb-xpbar" style="width:0%"></div></div>
+      <div class="pb-level" id="pb-level">Livello 1</div>
+    </div>
+    <div class="pb-coins">🧠 <span id="pb-coins">0</span></div>
+  </div>
+
+  <div class="online-pill">
+    <div class="dot"></div>
+    <span id="onlineCount">Caricamento...</span>
+  </div>
+
+  <div class="skin-picker">
+    <button class="sp-arrow" onclick="shiftSkin(-1)">◀</button>
+    <div class="sp-cards" id="spCards"></div>
+    <button class="sp-arrow" onclick="shiftSkin(1)">▶</button>
+  </div>
+
+  <input class="name-inp inp" id="nameInp" placeholder="Il tuo nome..." maxlength="16" style="width:220px;text-align:center;margin-bottom:14px;"/>
+  <button class="btn-play" id="playBtn" onclick="joinGame()">GIOCA! 🍕</button>
+  <div class="hint">WASD · Frecce · Q E R = Abilità</div>
+
+  <div style="display:flex;gap:10px;margin-top:14px;">
+    <button class="btn btn-secondary" onclick="showScreen('s-profile')" style="padding:8px 16px;font-size:.82rem;margin:0">👤 Profilo</button>
+    <button class="btn btn-danger" onclick="doLogout()" style="padding:8px 16px;font-size:.82rem;margin:0">Esci</button>
+  </div>
 </div>
 
-<input class="name-inp" id="nameInp" placeholder="Il tuo nome..." maxlength="14"/>
-<button class="btn-play" id="playBtn" onclick="joinGame()">GIOCA! 🍕</button>
-<div class="hint">WASD · Frecce · Q E R = Abilità</div>
-<div class="status" id="status"></div>
+<!-- ── PROFILE SCREEN ── -->
+<div id="s-profile" class="screen">
+  <div class="logo" style="font-size:1.8rem;margin-bottom:4px;">👤 Profilo</div>
+  <div class="card">
+    <div style="text-align:center;margin-bottom:4px;">
+      <div class="level-badge" id="prof-badge">1</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#1e3a5f;" id="prof-name">-</div>
+      <div style="font-size:.78rem;color:#64748b;margin-bottom:4px;">Membro dal <span id="prof-since">-</span></div>
+    </div>
+    <div class="xp-full"><div class="xp-full-bar" id="prof-xpbar" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:.75rem;color:#94a3b8;margin-bottom:10px;">
+      <span id="prof-xp-cur">0 XP</span>
+      <span id="prof-xp-next">/ 100 XP</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num" id="s-games">0</div><div class="stat-lbl">Partite</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-wins">0</div><div class="stat-lbl">Vittorie</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-best">0%</div><div class="stat-lbl">Miglior Score</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-coins">0 🧠</div><div class="stat-lbl">BrainCoins</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="showScreen('s-menu')" style="margin-bottom:8px">← Torna al Menu</button>
+    <button class="btn btn-danger" onclick="doLogout()">Esci dall'account</button>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const SKIN_SHAPES=['sphere','box','torus','cone','diamond','icosa'];
-const PREVIEW_COLORS=['#3b82f6','#ef4444','#22c55e','#f59e0b','#a855f7','#06b6d4'];
-let selSkin=0, skinOffset=0;
+'use strict';
 
-function makeShapeGeo(s){
+// ── STATE ──
+let currentUser = null;
+let authToken = localStorage.getItem('brainrot_token') || null;
+let selSkin = 0, skinOffset = 0;
+const SKIN_SHAPES = ['sphere','box','torus','cone','diamond','icosa'];
+const PREVIEW_COLORS = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#a855f7','#06b6d4'];
+
+// ── INIT ──
+(async function init() {
+  if (authToken) {
+    const user = await fetchMe();
+    if (user) {
+      currentUser = user;
+      applyUserToUI(user);
+      showScreen('s-menu');
+    } else {
+      authToken = null;
+      localStorage.removeItem('brainrot_token');
+      showScreen('s-auth');
+    }
+  } else {
+    showScreen('s-auth');
+  }
+  buildSkinPreviews('spCards');
+  updateOnlineCount();
+  setInterval(updateOnlineCount, 10000);
+})();
+
+// ── SCREEN ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('tab-login').style.display = tab==='login' ? '' : 'none';
+  document.getElementById('tab-register').style.display = tab==='register' ? '' : 'none';
+}
+
+// ── API HELPERS ──
+async function api(method, path, body, token) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token || authToken) headers['Authorization'] = 'Bearer ' + (token || authToken);
+  const r = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  return r.json();
+}
+
+async function fetchMe() {
+  try {
+    const r = await api('GET', '/api/auth/me');
+    return r.user || null;
+  } catch { return null; }
+}
+
+// ── AUTH ──
+async function doLogin() {
+  const login = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  err.textContent = '';
+  if (!login || !password) { err.textContent = 'Inserisci tutti i campi'; return; }
+  const r = await api('POST', '/api/auth/login', { login, password });
+  if (r.error) { err.textContent = r.error; return; }
+  authToken = r.token;
+  localStorage.setItem('brainrot_token', authToken);
+  currentUser = r.user;
+  applyUserToUI(r.user);
+  showScreen('s-menu');
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-user').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  const err = document.getElementById('reg-err');
+  err.textContent = '';
+  const r = await api('POST', '/api/auth/register', { username, email, password });
+  if (r.error) { err.textContent = r.error; return; }
+  authToken = r.token;
+  localStorage.setItem('brainrot_token', authToken);
+  currentUser = r.user;
+  applyUserToUI(r.user);
+  showScreen('s-menu');
+}
+
+function playAsGuest() {
+  currentUser = null;
+  showScreen('s-menu');
+  document.getElementById('profile-bar').style.display = 'none';
+}
+
+async function doLogout() {
+  if (authToken) await api('POST', '/api/auth/logout');
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem('brainrot_token');
+  showScreen('s-auth');
+}
+
+// ── APPLY USER ──
+function applyUserToUI(user) {
+  if (!user) return;
+  selSkin = user.skin || 0;
+  document.getElementById('nameInp').value = user.username;
+  document.getElementById('pb-avatar').textContent = user.username[0].toUpperCase();
+  document.getElementById('pb-name').textContent = user.username;
+  document.getElementById('pb-level').textContent = 'Livello ' + user.level;
+  document.getElementById('pb-coins').textContent = user.coins;
+  const pct = user.xpNeeded > 0 ? Math.round(user.xpProgress / user.xpNeeded * 100) : 100;
+  document.getElementById('pb-xpbar').style.width = pct + '%';
+  document.getElementById('profile-bar').style.display = 'flex';
+
+  // Profile screen
+  document.getElementById('prof-badge').textContent = user.level;
+  document.getElementById('prof-name').textContent = user.username;
+  document.getElementById('prof-since').textContent = new Date(user.created_at*1000).toLocaleDateString('it-IT');
+  document.getElementById('prof-xp-cur').textContent = user.xp + ' XP';
+  document.getElementById('prof-xp-next').textContent = '/ ' + user.xpForNextLevel + ' XP';
+  document.getElementById('prof-xpbar').style.width = pct + '%';
+  document.getElementById('s-games').textContent = user.games;
+  document.getElementById('s-wins').textContent = user.wins;
+  document.getElementById('s-best').textContent = user.best_score.toFixed(1) + '%';
+  document.getElementById('s-coins').textContent = user.coins + ' 🧠';
+
+  buildSkinPreviews('spCards');
+}
+
+// ── SKIN PREVIEWS ──
+function makeShapeGeo(s) {
   if(s==='sphere') return new THREE.SphereGeometry(.65,20,16);
   if(s==='box')    return new THREE.BoxGeometry(1,1,1);
   if(s==='torus')  return new THREE.TorusGeometry(.52,.24,10,28);
@@ -76,16 +310,16 @@ function makeShapeGeo(s){
   return new THREE.IcosahedronGeometry(.68,0);
 }
 
-function buildSkinPreviews(){
-  const wrap=document.getElementById('spCards');
-  wrap.innerHTML='';
+function buildSkinPreviews(id) {
+  const wrap = document.getElementById(id); if(!wrap) return;
+  wrap.innerHTML = '';
   for(let i=0;i<3;i++){
     const idx=(skinOffset+i)%SKIN_SHAPES.length;
     const card=document.createElement('div');
     card.className='sp-card'+(idx===selSkin?' active':'');
-    const cvs=document.createElement('canvas');cvs.width=cvs.height=58;
+    const cvs=document.createElement('canvas');cvs.width=cvs.height=56;
     card.appendChild(cvs);
-    card.onclick=()=>{selSkin=idx;buildSkinPreviews();};
+    card.onclick=()=>{selSkin=idx;buildSkinPreviews(id);saveSkin(idx);};
     wrap.appendChild(card);
     animateSkin(cvs,idx);
   }
@@ -93,7 +327,7 @@ function buildSkinPreviews(){
 
 function animateSkin(cvs,idx){
   const r=new THREE.WebGLRenderer({canvas:cvs,antialias:true,alpha:true});
-  r.setSize(58,58);r.setClearColor(0,0);
+  r.setSize(56,56);r.setClearColor(0,0);
   const s=new THREE.Scene();
   s.add(new THREE.AmbientLight(0xffffff,1.6));
   const dl=new THREE.DirectionalLight(0xffffff,1.2);dl.position.set(2,4,3);s.add(dl);
@@ -106,55 +340,45 @@ function animateSkin(cvs,idx){
   anim();
 }
 
-function shiftSkin(d){
+async function saveSkin(idx) {
+  if (!authToken) return;
+  await api('PATCH', '/api/profile/skin', { skin: idx });
+}
+
+function shiftSkin(d) {
   skinOffset=(skinOffset+d+SKIN_SHAPES.length)%SKIN_SHAPES.length;
   selSkin=(selSkin+d+SKIN_SHAPES.length)%SKIN_SHAPES.length;
-  buildSkinPreviews();
+  buildSkinPreviews('spCards');
+  saveSkin(selSkin);
 }
 
-buildSkinPreviews();
-
-// Fetch online players count
-async function updateOnlineCount(){
-  try{
-    const r=await fetch('/api/servers');
-    const servers=await r.json();
-    const total=servers.reduce((a,s)=>a+(s.players||0),0);
-    document.getElementById('onlineCount').textContent=total>0?`${total} giocatori online`:'Sii il primo a giocare!';
-  }catch(e){
-    document.getElementById('onlineCount').textContent='Server online';
-  }
+// ── ONLINE COUNT ──
+async function updateOnlineCount() {
+  try {
+    const r = await fetch('/api/servers');
+    const servers = await r.json();
+    const total = servers.reduce((a,s)=>a+(s.players||0),0);
+    document.getElementById('onlineCount').textContent = total>0 ? `${total} giocatori online` : 'Sii il primo!';
+  } catch { document.getElementById('onlineCount').textContent = 'Server online'; }
 }
-updateOnlineCount();
-setInterval(updateOnlineCount,10000);
 
-// Join game
-async function joinGame(){
-  const name=document.getElementById('nameInp').value.trim()||'Anonimo';
-  const btn=document.getElementById('playBtn');
-  const status=document.getElementById('status');
-  btn.disabled=true;
-  btn.textContent='Connessione...';
-  status.textContent='';
-  status.className='status';
-
-  try{
-    const r=await fetch('/api/best-server');
-    const {ip,port}=await r.json();
-    // Redirect to game server
-    const params=new URLSearchParams({name,skin:selSkin});
-    window.location.href=`http://${ip}:${port}/game?${params}`;
-  }catch(e){
-    status.textContent='Errore di connessione. Riprova!';
-    status.className='status error';
-    btn.disabled=false;
-    btn.textContent='GIOCA! 🍕';
+// ── JOIN GAME ──
+async function joinGame() {
+  const name = document.getElementById('nameInp').value.trim() || (currentUser ? currentUser.username : 'Anonimo');
+  const btn = document.getElementById('playBtn');
+  btn.disabled = true; btn.textContent = 'Connessione...';
+  try {
+    const r = await fetch('/api/best-server');
+    const {ip, port} = await r.json();
+    const params = new URLSearchParams({ name, skin: selSkin, token: authToken||'' });
+    window.location.href = `http://${ip}:${port}/game?${params}`;
+  } catch {
+    btn.disabled = false; btn.textContent = 'GIOCA! 🍕';
   }
 }
 
-document.getElementById('nameInp').addEventListener('keydown',e=>{
-  if(e.key==='Enter') joinGame();
-});
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('nameInp') && document.getElementById('nameInp').addEventListener('keydown', e => { if(e.key==='Enter') joinGame(); });
 </script>
 </body>
 </html>
