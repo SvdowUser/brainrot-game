@@ -115,21 +115,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#dbeafe;font-family:
 <body>
 
 <!-- MENU -->
-<div id="s-menu" class="screen active">
-  <div class="logo">🧠 BrainRotBattle.io</div>
-  <div class="tagline">Italian Brainrot Territory Battle</div>
-  <div class="skin-picker">
-    <button class="sp-arrow" onclick="shiftSkin(-1)">◀</button>
-    <div class="sp-cards" id="spCards"></div>
-    <button class="sp-arrow" onclick="shiftSkin(1)">▶</button>
-  </div>
-  <input class="name-inp" id="nameInp" placeholder="Il tuo nome..." maxlength="14"/>
-  <button class="btn-play" onclick="joinGame()">GIOCA! 🍕</button>
-  <div class="hint">WASD · Frecce · Q E R = Abilità</div>
-</div>
-
-<!-- CONNECTING -->
-<div id="s-connecting" class="screen">
+<!-- CONNECTING (shown while auto-joining) -->
+<div id="s-menu" class="screen" style="display:none"></div>
+<div id="s-connecting" class="screen active">
   <div class="spinner"></div>
   <div class="conn-text">Connessione...</div>
 </div>
@@ -308,10 +296,10 @@ function showScreen(id){
 
 function goMenu(){
   const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
+  const token = window._authToken || '';
   if(socket){socket.disconnect();socket=null;}
-  window.location.href = lobbyBase;
+  window.location.href = lobbyBase + (token ? '?reauth='+encodeURIComponent(token) : '');
 }
-
 // ═══════════════════════════════════════════
 //  THREE.JS
 // ═══════════════════════════════════════════
@@ -613,81 +601,63 @@ function calcMyRank() {
   const myState = playerStates.get(mySid);
   if (!myState) return 99;
   const myScore = myState.score || 0;
-  // Count how many OTHER human players (non-bot) have MORE territory than me
+  // Count ALL players (including bots) who are alive and have more territory
+  // This makes rank realistic - you're not #1 just because no humans
   let rank = 1;
   for (const [sid, p] of playerStates) {
-    if (sid !== mySid && !p.isBot && p.score > myScore) rank++;
+    if (sid !== mySid && p.alive && p.score > myScore) rank++;
   }
+  // If only 1 human player, never show as winner - minimum rank = 2 unless real win
+  const humanPlayers = Array.from(playerStates.values()).filter(p=>!p.isBot).length;
+  if (humanPlayers <= 1 && myScore < 15) rank = Math.max(rank, 2);
   return rank;
 }
 
 async function showResultsScreen(territory, rank, elapsed) {
-  // Fill basic stats
   document.getElementById('resTerr').textContent = territory.toFixed(1)+'%';
   document.getElementById('resRank').textContent = '#'+rank;
-  document.getElementById('resTime').textContent = elapsed>60 ? Math.floor(elapsed/60)+'m '+( elapsed%60)+'s' : elapsed+'s';
-
-  // Coins estimate (even for guests show something)
-  const coins = Math.floor(5 + territory + (rank===1?20:0));
-  document.getElementById('resCoins').textContent = '+'+coins+' 🧠';
-
-  // Title
+  document.getElementById('resTime').textContent = elapsed>60 ? Math.floor(elapsed/60)+'m '+(elapsed%60)+'s' : elapsed+'s';
   const isTop3 = rank<=3;
   document.getElementById('resIcon').textContent = rank===1?'🏆':rank<=3?'🥈':'💀';
-  document.getElementById('resTitle').textContent = rank===1?'Vittoria!':rank<=3?'Ottimo!':'Sei morto!';
+  document.getElementById('resTitle').textContent = rank===1?'Vittoria!':rank<=3?'Ottimo!':'Eliminato!';
   document.getElementById('resTitle').className = 'res-title '+(isTop3?'win':'dead');
   document.getElementById('resSub').textContent = isTop3?'OTTIMA PARTITA!':'PARTITA FINITA';
-
+  const estCoins = Math.floor(5+territory+(rank===1?20:0));
+  document.getElementById('resCoins').textContent = '+'+estCoins+' 🪙';
   showScreen('s-death');
 
-  // XP - only for logged-in users
   const token = window._authToken;
   if (!token) return;
-
   const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
   try {
     const r = await fetch(lobbyBase+'/api/game/result', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ token, territory, won: rank===1 })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token, territory, won:rank===1})
     });
     const d = await r.json();
     if (!d.ok) return;
-
-    // Show XP card
-    const xpCard = document.getElementById('resXpCard');
-    xpCard.style.display = 'block';
-
-    // Level up?
+    document.getElementById('resXpCard').style.display='block';
     if (d.levelUp) {
-      const lu = document.getElementById('resLevelUp');
-      lu.style.display = 'block';
-      document.getElementById('resNewLevel').textContent = d.newLevel;
+      document.getElementById('resLevelUp').style.display='block';
+      document.getElementById('resNewLevel').textContent=d.newLevel;
     }
-
-    // XP bar animation
-    const level = d.newLevel || (window._profile?.level||1);
-    const xpForLevel = l => Math.floor(100 * Math.pow(l,1.5));
-    const xpNeeded = xpForLevel(level+1) - xpForLevel(level);
-    const xpProgress = d.newXp - xpForLevel(level);
-    const pct = Math.max(0, Math.min(100, xpProgress/xpNeeded*100));
-
-    document.getElementById('resLevel').textContent = level;
-    document.getElementById('resXpText').textContent = xpProgress+' / '+xpNeeded+' XP';
-    document.getElementById('resXpGained').textContent = '+'+d.xpGained+' XP';
-    document.getElementById('resCoins').textContent = '+'+d.coinsGained+' 🧠';
-
-    // Animate bar
-    setTimeout(()=>{ document.getElementById('resXpFill').style.width = pct+'%'; }, 300);
-
-    // Update HUD
+    const level=d.newLevel||1;
+    const xfl=l=>Math.floor(100*Math.pow(l,1.5));
+    const xpNeeded=xfl(level+1)-xfl(level);
+    const xpProgress=d.newXp-xfl(level);
+    const pct=Math.max(0,Math.min(100,xpProgress/xpNeeded*100));
+    document.getElementById('resLevel').textContent=level;
+    document.getElementById('resXpText').textContent=xpProgress+' / '+xpNeeded+' XP';
+    document.getElementById('resXpGained').textContent='+'+d.xpGained+' XP';
+    document.getElementById('resCoins').textContent='+'+d.coinsGained+' 🪙';
+    setTimeout(()=>{ document.getElementById('resXpFill').style.width=pct+'%'; },400);
     if (window._profile) {
-      window._profile.level = level;
-      window._profile.coins = (window._profile.coins||0)+d.coinsGained;
-      document.getElementById('hudLevel').textContent = level;
-      document.getElementById('hudCoins').textContent = window._profile.coins;
+      window._profile.level=level;
+      window._profile.coins=(window._profile.coins||0)+d.coinsGained;
+      document.getElementById('hudLevel').textContent=level;
+      document.getElementById('hudCoins').textContent=window._profile.coins;
     }
-  } catch(e) { console.error('XP error:', e); }
+  } catch(e){console.error('XP:',e);}
 }
 
 function respawn(){
@@ -842,22 +812,26 @@ addEventListener('resize',()=>{
   renderer.setSize(innerWidth,innerHeight);
 });
 
-// Auto-join if URL has name param (coming from lobby)
-window.addEventListener('load',function(){
-  const params=new URLSearchParams(window.location.search);
-  const name=params.get('name');
-  const skin=parseInt(params.get('skin')||'0');
-  const token=params.get('token')||'';
-  const lobby=params.get('lobby')||'http://46.225.224.163:3000';
+// Always auto-join from URL params - this page should never show a menu
+window.addEventListener('load', function() {
+  const params = new URLSearchParams(window.location.search);
+  const name = params.get('name');
+  const skin = parseInt(params.get('skin') || '0');
+  const token = params.get('token') || '';
+  const lobby = params.get('lobby') || 'http://46.225.224.163:3000';
   window._lobbyBase = lobby;
-  if(token) window._authToken=token;
-  if(name){
-    selSkin=skin;
-    document.getElementById('nameInp').value=name;
-    buildSkinPreviews('spCards');
-    if(token) loadProfileHUD(token);
-    setTimeout(()=>joinGame(),800);
+  window._authToken = token || null;
+
+  if (!name) {
+    // No params = came directly, redirect to lobby
+    window.location.href = lobby;
+    return;
   }
+
+  selSkin = skin;
+  document.getElementById('nameInp').value = name;
+  if (token) loadProfileHUD(token);
+  joinGame();
 });
 
 async function loadProfileHUD(token) {
