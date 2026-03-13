@@ -19,23 +19,54 @@ app.get('/api/status', (req, res) => {
 // ── CONFIG ──
 const COLS = 100, ROWS = 100;
 const MAX_PLAYERS = 30;
-const BOT_COUNT = 10;        // Bots per lobby
-const STEP_MS = 120;         // Faster tick = smoother
+const LOBBY_TARGET = 22;     // Always keep this many total (bots + real)
+const STEP_MS = 120;
 const MY_IP = process.env.MY_IP || '89.167.75.175';
 const MY_PORT = process.env.PORT || 3000;
 const LOBBY_URL = process.env.LOBBY_URL || 'http://46.225.224.163:3000';
 const SERVER_ID = `game-${MY_IP}`;
 
+// Carefully curated colors - no random/ugly ones
 const PLAYER_COLORS = [
-  '#3b82f6','#ef4444','#22c55e','#f59e0b','#a855f7','#ec4899',
-  '#06b6d4','#84cc16','#f97316','#6366f1','#14b8a6','#e11d48',
-  '#0ea5e9','#d946ef','#10b981','#fbbf24','#f43f5e','#8b5cf6',
-  '#0891b2','#65a30d','#ea580c','#7c3aed','#0d9488','#be123c',
-  '#2563eb','#dc2626','#16a34a','#d97706','#9333ea','#db2777'
+  '#3B82F6', // blue
+  '#EF4444', // red
+  '#10B981', // emerald
+  '#F59E0B', // amber
+  '#8B5CF6', // violet
+  '#EC4899', // pink
+  '#06B6D4', // cyan
+  '#F97316', // orange
+  '#6366F1', // indigo
+  '#14B8A6', // teal
+  '#84CC16', // lime
+  '#E11D48', // rose
+  '#0EA5E9', // sky
+  '#A855F7', // purple
+  '#22C55E', // green
+  '#FB923C', // light orange
+  '#38BDF8', // light blue
+  '#4ADE80', // light green
+  '#C084FC', // light purple
+  '#F472B6', // light pink
+  '#2DD4BF', // turquoise
+  '#FCD34D', // yellow
+  '#818CF8', // light indigo
+  '#34D399', // mint
+  '#60A5FA', // cornflower
+  '#F87171', // salmon
+  '#A3E635', // yellow-green
+  '#E879F9', // fuchsia
+  '#67E8F9', // ice blue
+  '#FCA5A1', // peach
 ];
 
-const BOT_NAMES = ['Tung Sahur','Tralalero','Bombardino','Ballerina','Capuccino',
-  'Bombombini','Frigo Camelo','La Vacca','Crocodilo','Brr Brr Patapim'];
+const BOT_NAMES = [
+  'Tung Tung Sahur','Tralalero','Bombardino','Ballerina Cappuccino',
+  'Bombombini','Frigo Camelo','La Vacca','Crocodilo Bello',
+  'Brr Patapim','Trippi Troppi','Boneca Ambalabu','Glorbo Frutoso',
+  'Lirili Larila','Chimpanzini','Lirilì Larilà','Pot Pot',
+  'Tracotoco Tracatà','Burbaloni','Cappuccino Assassino','Pinguini'
+];
 
 // ── SKILLS ──
 // 0=Fulmine(Q): speed boost 2 steps/tick for 3s
@@ -113,8 +144,8 @@ function createLobby() {
   const id = `room-${++lobbyCounter}`;
   const lobby = { id, players: new Map(), grid: new Int16Array(COLS*ROWS).fill(-1), interval: null, colorIndex: 0 };
   lobbies.set(id, lobby);
-  // Add bots
-  for (let i = 0; i < BOT_COUNT; i++) addBot(lobby);
+  // Fill with bots up to target
+  for (let i = 0; i < LOBBY_TARGET; i++) addBot(lobby);
   return lobby;
 }
 
@@ -126,6 +157,33 @@ function addBot(lobby) {
   const bot = createPlayer(numId, name, color, Math.floor(Math.random()*6), spawn, true);
   claimStart(lobby.grid, numId, spawn.x, spawn.y);
   lobby.players.set('bot-'+numId, bot);
+  return 'bot-'+numId;
+}
+
+// Remove the bot that has the least territory (least impactful to remove)
+function removeOneBot(lobby) {
+  let weakestSid = null, weakestScore = Infinity;
+  for (const [sid, p] of lobby.players) {
+    if (!p.isBot) continue;
+    if (p.score < weakestScore) { weakestScore = p.score; weakestSid = sid; }
+  }
+  if (!weakestSid) return;
+  const bot = lobby.players.get(weakestSid);
+  if (!bot) return;
+  // Make the bot walk into its own trail to die naturally
+  bot._scheduledRemove = true;
+}
+
+function countBots(lobby) {
+  let n = 0;
+  for (const p of lobby.players.values()) if (p.isBot) n++;
+  return n;
+}
+
+function countHumans(lobby) {
+  let n = 0;
+  for (const p of lobby.players.values()) if (!p.isBot) n++;
+  return n;
 }
 
 function getAvailableLobby() {
@@ -136,18 +194,22 @@ function getAvailableLobby() {
 // ── BOT AI ──
 const DIRS = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
 function botTick(lobby, sid, p) {
+  // If scheduled for removal, make it walk into its own trail
+  if (p._scheduledRemove && p.trail.length > 0) {
+    const target = p.trail[0];
+    const ndx = Math.sign(target.x - p.x);
+    const ndy = Math.sign(target.y - p.y);
+    if (ndx !== 0) p.dx = ndx, p.dy = 0;
+    else if (ndy !== 0) p.dx = 0, p.dy = ndy;
+    return;
+  }
+
   p.botTimer--;
   if (p.botTimer > 0) return;
   p.botTimer = 3 + Math.floor(Math.random()*6);
 
-  // Count own territory around current pos
-  const myTiles = [];
-  for (let i = 0; i < lobby.grid.length; i++) if (lobby.grid[i] === p.numId) myTiles.push(i);
-
-  // If on own territory and have trail, try to close loop
   const onOwn = lobby.grid[gIdx(p.x, p.y)] === p.numId;
   if (onOwn && p.trail.length > 4) {
-    // random direction change
     const validDirs = DIRS.filter(d => {
       const nx = p.x+d.dx, ny = p.y+d.dy;
       return nx>=0&&nx<COLS&&ny>=0&&ny<ROWS && !(d.dx===-p.dx&&d.dy===0) && !(d.dy===-p.dy&&d.dx===0);
@@ -156,16 +218,14 @@ function botTick(lobby, sid, p) {
     return;
   }
 
-  // Move toward empty territory or explore
   const validDirs = DIRS.filter(d => {
     const nx = p.x+d.dx, ny = p.y+d.dy;
     if (nx<0||nx>=COLS||ny<0||ny>=ROWS) return false;
-    if (d.dx===-p.dx&&d.dy===0) return false; // no 180
+    if (d.dx===-p.dx&&d.dy===0) return false;
     if (d.dy===-p.dy&&d.dx===0) return false;
     return true;
   });
 
-  // Prefer directions with unclaimed territory
   const scored = validDirs.map(d => {
     let score = 0;
     for (let s = 1; s <= 4; s++) {
@@ -242,44 +302,38 @@ function stepLobby(lobby) {
   for (const [sid, p] of entries) {
     tickSkills(p, dt);
     if (!p.alive) {
-      // Auto-respawn bots after 3s
       if (p.isBot) {
         p._deadTimer = (p._deadTimer||0) + dt;
-        if (p._deadTimer > 3) {
+        const overTarget = lobby.players.size > LOBBY_TARGET;
+        if (overTarget) {
+          // Remove dead bot to make room for human
+          lobby.players.delete(sid);
+          io.to(lobby.id).emit('playerLeft', sid);
+        } else if (p._deadTimer > 3) {
           const spawn = getSpawn(entries.filter(([,pl])=>pl.alive).map(([,pl])=>pl));
-          p.x=spawn.x; p.y=spawn.y; p.trail=[]; p.alive=true; p._deadTimer=0;
-          claimStart(lobby.grid, p.numId, spawn.x, spawn.y);
-          const colorMap={};for(const[,pl]of lobby.players)colorMap[pl.numId]=pl.color;
+          p.x=spawn.x; p.y=spawn.y; p.trail=[]; p.alive=true; p._deadTimer=0; p._scheduledRemove=false;
+          claimStart(lobby.grid, p.numId, p.x, p.y);
           io.to(lobby.id).emit('playerRespawned',{sid,x:p.x,y:p.y,skin:p.skin});
         }
       }
       continue;
     }
 
-    // Bot AI
     if (p.isBot) botTick(lobby, sid, p);
 
-    // Fulmine: double step
-    const steps = (p.skillActive[0]) ? 2 : 1;
-
+    const steps = p.skillActive[0] ? 2 : 1;
     for (let s = 0; s < steps; s++) {
       if (!p.alive) break;
       const nx = p.x + p.dx, ny = p.y + p.dy;
       if (nx<0||nx>=COLS||ny<0||ny>=ROWS) { killPlayer(lobby,sid,p,tiles,deaths); break; }
-
-      // Self-trail collision (Scudo protects)
       if (!p.skillActive[1] && p.trail.some(t=>t.x===nx&&t.y===ny)) { killPlayer(lobby,sid,p,tiles,deaths); break; }
-
-      // Enemy cuts your trail
       for (const [oid,op] of lobby.players) {
         if (oid!==sid && op.alive && !op.skillActive[1] && op.trail.some(t=>t.x===p.x&&t.y===p.y)) {
           killPlayer(lobby,oid,op,tiles,deaths);
         }
       }
-
       if (!p.alive) break;
       p.x=nx; p.y=ny;
-
       const cell = lobby.grid[gIdx(nx,ny)];
       if (cell===p.numId && p.trail.length>0) {
         p.trail.forEach(t=>{lobby.grid[gIdx(t.x,t.y)]=p.numId; tiles.push({x:t.x,y:t.y,color:p.color});});
@@ -291,8 +345,23 @@ function stepLobby(lobby) {
         trails.push({sid,trail:p.trail.slice()});
       }
     }
-
     positions.push({sid,x:p.x,y:p.y,alive:p.alive});
+  }
+
+  // Balance: under target → add a bot
+  if (lobby.players.size < LOBBY_TARGET) {
+    const newSid = addBot(lobby);
+    const bot = lobby.players.get(newSid);
+    if (bot) {
+      io.to(lobby.id).emit('playerJoined',{sid:newSid,numId:bot.numId,name:bot.name,x:bot.x,y:bot.y,color:bot.color,skin:bot.skin,alive:true,score:0,trail:[],isBot:true});
+      const gt=[];for(let i=0;i<lobby.grid.length;i++){if(lobby.grid[i]===bot.numId)gt.push({x:i%COLS,y:Math.floor(i/COLS),color:bot.color});}
+      if(gt.length) io.to(lobby.id).emit('tiles',gt);
+    }
+  }
+  // Balance: over target → schedule weakest bot to die
+  if (lobby.players.size > LOBBY_TARGET) {
+    const bots = Array.from(lobby.players.values()).filter(p=>p.isBot&&p.alive&&!p._scheduledRemove);
+    if (bots.length > 0) { bots.sort((a,b)=>a.score-b.score); bots[0]._scheduledRemove=true; }
   }
 
   // Update scores
