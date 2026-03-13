@@ -4,382 +4,432 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BrainRotBattle.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@700;900&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;background:linear-gradient(150deg,#e0f2fe 0%,#f0fdf4 60%,#fef9c3 100%);}
+:root{
+  --bg:#090e1a;--surface:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);
+  --accent:#3b82f6;--gold:#f59e0b;--text:#e2e8f0;--muted:#64748b;--green:#22c55e;--red:#ef4444;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
+.bg-glow{position:fixed;border-radius:50%;filter:blur(140px);pointer-events:none;z-index:0;}
+.bg-a{width:700px;height:700px;background:radial-gradient(circle,rgba(59,130,246,.15),transparent);top:-200px;left:-200px;}
+.bg-b{width:600px;height:600px;background:radial-gradient(circle,rgba(139,92,246,.12),transparent);bottom:-150px;right:-150px;}
+.bg-c{width:400px;height:400px;background:radial-gradient(circle,rgba(245,158,11,.07),transparent);top:30%;left:30%;}
+#app{position:relative;z-index:1;width:100vw;height:100vh;display:grid;grid-template-rows:60px 1fr 114px;grid-template-columns:290px 1fr 280px;grid-template-areas:"nav nav nav" "left center right" "foot foot foot";}
+/* NAV */
+nav{grid-area:nav;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:rgba(9,14,26,.85);backdrop-filter:blur(20px);}
+.logo{font-family:'Orbitron',monospace;font-size:1.15rem;font-weight:900;background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.05em;}
+.online-pill{display:flex;align-items:center;gap:7px;padding:5px 13px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:.72rem;font-weight:700;color:var(--muted);}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pdotAnim 2s infinite;}
+@keyframes pdotAnim{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-coins{display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.9rem;color:var(--gold);}
+.coin-mini{width:20px;height:20px;}
+.nav-prof{display:flex;align-items:center;gap:9px;cursor:pointer;padding:5px 10px;border-radius:10px;transition:background .2s;}
+.nav-prof:hover{background:var(--surface);}
+.nav-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.8rem;font-weight:900;color:#fff;}
+.nav-nm{font-weight:800;font-size:.82rem;line-height:1.2;}
+.nav-lv{font-size:.68rem;color:var(--muted);}
+/* PANELS */
+#left{grid-area:left;padding:16px 14px 16px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden;}
+#right{grid-area:right;padding:16px 20px 16px 14px;display:flex;flex-direction:column;gap:12px;overflow:hidden;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.card-title{font-size:.6rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+/* Profile */
+.prof-row{display:flex;align-items:center;gap:11px;margin-bottom:12px;}
+.prof-av{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 3px 14px rgba(59,130,246,.3);}
+.prof-name{font-weight:900;font-size:.95rem;}
+.prof-tag{font-size:.67rem;color:var(--muted);font-family:'Rajdhani',sans-serif;}
+.lv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.lv-badge{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;font-family:'Orbitron',monospace;font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:100px;}
+.xp-lbl{font-size:.65rem;color:var(--muted);font-weight:700;}
+.xp-track{width:100%;height:7px;background:rgba(255,255,255,.07);border-radius:100px;overflow:hidden;}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--accent),#8b5cf6);border-radius:100px;transition:width .8s cubic-bezier(.22,1,.36,1);width:0%;}
+/* Stats */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.sbox{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:9px;text-align:center;}
+.sn{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:#fff;}
+.sl{font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-top:2px;}
+/* Battle Pass */
+.bp{background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(251,191,36,.05));border:1px solid rgba(245,158,11,.2);border-radius:14px;padding:14px;cursor:pointer;transition:all .2s;}
+.bp:hover{border-color:rgba(245,158,11,.4);}
+.bp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.bp-lbl{font-size:.6rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--gold);}
+.bp-tag{background:var(--gold);color:#000;font-size:.55rem;font-weight:900;padding:2px 6px;border-radius:100px;}
+.bp-title{font-family:'Orbitron',monospace;font-size:.82rem;color:#fff;margin-bottom:6px;}
+.bp-bar{width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:100px;overflow:hidden;}
+.bp-bar-fill{height:100%;width:23%;background:linear-gradient(90deg,var(--gold),#fbbf24);}
+.bp-sub{font-size:.65rem;color:var(--muted);margin-top:4px;}
+/* Center */
+#center{grid-area:center;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#char-canvas{width:100%;height:100%;display:block;}
+.skin-tag{position:absolute;bottom:66px;left:50%;transform:translateX(-50%);background:rgba(9,14,26,.82);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:100px;padding:5px 16px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.88rem;letter-spacing:.8px;white-space:nowrap;}
+.skin-ctrl{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;}
+.s-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:rgba(9,14,26,.8);backdrop-filter:blur(10px);cursor:pointer;color:var(--text);font-size:.85rem;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.s-btn:hover{background:rgba(255,255,255,.1);border-color:var(--accent);}
+.s-dots{display:flex;gap:6px;}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all .2s;cursor:pointer;}
+.sdot.on{background:var(--accent);box-shadow:0 0 7px var(--accent);}
+/* Right panels */
+.news-item{padding:9px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.02);margin-bottom:7px;cursor:pointer;transition:all .2s;}
+.news-item:hover{background:var(--surface);}
+.news-tag{font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:3px;}
+.news-text{font-size:.78rem;font-weight:700;line-height:1.3;}
+.lb-list{display:flex;flex-direction:column;gap:5px;}
+.lb-row{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.02);border:1px solid transparent;transition:all .2s;}
+.lb-row:hover{background:var(--surface);border-color:var(--border);}
+.lb-rk{width:18px;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;color:var(--muted);text-align:center;}
+.lb-un{flex:1;font-weight:700;font-size:.8rem;}
+.lb-xp{font-family:'Rajdhani',sans-serif;font-size:.76rem;color:var(--muted);}
+/* FOOTER */
+#foot{grid-area:foot;border-top:1px solid var(--border);background:rgba(9,14,26,.92);backdrop-filter:blur(20px);display:flex;align-items:center;padding:0 20px;gap:14px;}
+.modes{display:flex;gap:9px;flex:1;}
+.mode{padding:10px 14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);cursor:pointer;transition:all .2s;min-width:120px;position:relative;}
+.mode:hover:not(.locked){border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.07);}
+.mode.on{border-color:var(--accent);background:rgba(59,130,246,.11);box-shadow:0 0 18px rgba(59,130,246,.14);}
+.mode.locked{opacity:.4;cursor:not-allowed;}
+.mode-icon{font-size:1.3rem;margin-bottom:3px;}
+.mode-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.84rem;letter-spacing:.5px;}
+.mode-desc{font-size:.6rem;color:var(--muted);margin-top:1px;}
+.mbadge{position:absolute;top:5px;right:7px;font-size:.52rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:2px 5px;border-radius:100px;}
+.mbadge.soon{background:rgba(100,116,139,.2);color:var(--muted);}
+.mbadge.live{background:rgba(34,197,94,.15);color:var(--green);}
+.play-wrap{display:flex;flex-direction:column;align-items:center;gap:7px;}
+.name-inp{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:8px 14px;font-size:.85rem;font-family:'Nunito',sans-serif;color:var(--text);outline:none;width:185px;text-align:center;transition:all .2s;}
+.name-inp:focus{border-color:var(--accent);background:rgba(59,130,246,.06);}
+.name-inp::placeholder{color:var(--muted);}
+.btn-play{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;padding:13px 40px;font-size:1rem;font-family:'Orbitron',monospace;font-weight:700;border-radius:11px;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 18px rgba(59,130,246,.4);transition:all .2s;white-space:nowrap;}
+.btn-play:hover{transform:translateY(-2px);box-shadow:0 7px 26px rgba(59,130,246,.5);}
+.btn-play:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
-.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
-.screen.active{display:flex;}
-
-/* ── SHARED ── */
-.logo{font-family:'Fredoka One',cursive;font-size:clamp(2rem,6vw,4rem);color:#1e3a5f;animation:bob 2.8s ease-in-out infinite;margin-bottom:4px;}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.tagline{font-size:.8rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:24px;}
-.card{background:rgba(255,255,255,.9);backdrop-filter:blur(16px);border-radius:20px;border:1px solid rgba(255,255,255,.9);box-shadow:0 8px 32px rgba(0,0,0,.08);padding:28px 32px;width:100%;max-width:380px;}
-.inp{width:100%;background:white;border:2px solid #e2e8f0;border-radius:12px;padding:11px 16px;font-size:.95rem;font-family:'Nunito',sans-serif;color:#1e3a5f;outline:none;margin-bottom:10px;transition:border .2s;}
-.inp:focus{border-color:#3b82f6;}
-.inp::placeholder{color:#94a3b8;}
-.btn{width:100%;padding:13px;font-size:1rem;font-family:'Fredoka One',cursive;border:none;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:8px;letter-spacing:.5px;}
-.btn-primary{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;box-shadow:0 4px 16px rgba(59,130,246,.35);}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,.45);}
-.btn-secondary{background:rgba(59,130,246,.08);color:#3b82f6;border:2px solid rgba(59,130,246,.2);}
-.btn-secondary:hover{background:rgba(59,130,246,.14);}
-.btn-danger{background:rgba(239,68,68,.08);color:#ef4444;border:2px solid rgba(239,68,68,.2);}
-.err{color:#ef4444;font-size:.82rem;font-weight:700;margin-bottom:8px;min-height:18px;}
-.tab-row{display:flex;gap:0;margin-bottom:20px;border-radius:12px;overflow:hidden;border:2px solid #e2e8f0;}
-.tab{flex:1;padding:10px;text-align:center;cursor:pointer;font-weight:800;font-size:.88rem;background:white;color:#94a3b8;transition:all .2s;border:none;}
-.tab.active{background:#3b82f6;color:white;}
-.link{color:#3b82f6;cursor:pointer;font-weight:700;font-size:.85rem;text-align:center;display:block;margin-top:6px;}
-.link:hover{text-decoration:underline;}
-
-/* ── MAIN MENU ── */
-.skin-picker{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
-.sp-arrow{width:34px;height:34px;border-radius:50%;border:none;background:rgba(30,58,95,.1);cursor:pointer;font-size:1rem;color:#1e3a5f;transition:all .2s;}
-.sp-arrow:hover{background:rgba(30,58,95,.2);}
-.sp-cards{display:flex;gap:8px;}
-.sp-card{width:64px;height:64px;border-radius:14px;border:3px solid transparent;cursor:pointer;background:white;box-shadow:0 3px 12px rgba(0,0,0,.08);overflow:hidden;transition:all .2s;}
-.sp-card.active{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2);transform:scale(1.06);}
-.btn-play{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:14px 56px;font-size:1.2rem;font-family:'Fredoka One',cursive;border-radius:100px;cursor:pointer;box-shadow:0 5px 20px rgba(59,130,246,.4);transition:all .2s;margin-bottom:8px;}
-.btn-play:hover{transform:translateY(-2px);}
-.hint{font-size:.72rem;color:#94a3b8;font-weight:700;}
-
-/* ── PROFILE BAR ── */
-.profile-bar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-radius:100px;padding:8px 16px;border:1px solid rgba(255,255,255,.9);box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:16px;cursor:pointer;transition:all .2s;}
-.profile-bar:hover{background:rgba(255,255,255,.95);}
-.pb-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:.9rem;color:white;}
-.pb-info{flex:1;}
-.pb-name{font-weight:800;font-size:.88rem;color:#1e3a5f;}
-.pb-level{font-size:.72rem;color:#64748b;font-weight:700;}
-.pb-coins{display:flex;align-items:center;gap:4px;font-family:'Fredoka One',cursive;font-size:.9rem;color:#f59e0b;}
-.xp-bar-wrap{width:100%;height:5px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin-top:3px;}
-.xp-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:10px;transition:width .5s;}
-
-/* ── PROFILE SCREEN ── */
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
-.stat-card{background:#f8fafc;border-radius:12px;padding:12px;text-align:center;}
-.stat-num{font-family:'Fredoka One',cursive;font-size:1.5rem;color:#1e3a5f;}
-.stat-lbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;}
-.level-badge{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.4rem;color:white;margin:0 auto 8px;box-shadow:0 4px 16px rgba(59,130,246,.35);}
-.xp-full{width:100%;height:10px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin:8px 0 4px;}
-.xp-full-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:10px;transition:width .6s;}
-
-/* ── ONLINE COUNT ── */
-.online-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.7);border-radius:100px;padding:5px 12px;font-size:.78rem;font-weight:700;color:#475569;margin-bottom:14px;}
-.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* ── GUEST BAR ── */
-.guest-bar{display:flex;gap:8px;margin-bottom:14px;}
-.guest-bar .btn{margin:0;padding:10px 16px;font-size:.85rem;}
+/* AUTH OVERLAY */
+#auth-overlay{position:fixed;inset:0;z-index:100;background:rgba(9,14,26,.97);backdrop-filter:blur(24px);display:flex;align-items:center;justify-content:center;}
+.abox{width:100%;max-width:380px;padding:36px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:22px;}
+.alogo{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:3px;}
+.asub{text-align:center;font-size:.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:26px;}
+.atabs{display:flex;border-radius:9px;overflow:hidden;border:1px solid var(--border);margin-bottom:22px;}
+.atab{flex:1;padding:9px;text-align:center;font-weight:800;font-size:.8rem;cursor:pointer;background:transparent;border:none;color:var(--muted);transition:all .2s;}
+.atab.on{background:var(--accent);color:#fff;}
+.ainp{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:11px 14px;font-size:.88rem;font-family:'Nunito',sans-serif;color:var(--text);outline:none;margin-bottom:9px;transition:all .2s;}
+.ainp:focus{border-color:var(--accent);background:rgba(59,130,246,.07);}
+.ainp::placeholder{color:var(--muted);}
+.abtn{width:100%;padding:12px;border:none;border-radius:9px;cursor:pointer;font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;letter-spacing:1px;margin-bottom:7px;transition:all .2s;}
+.abtn.p{background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;box-shadow:0 3px 14px rgba(59,130,246,.3);}
+.abtn.p:hover{transform:translateY(-1px);}
+.abtn.g{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--border);}
+.abtn.g:hover{color:var(--text);background:rgba(255,255,255,.08);}
+.aerr{color:var(--red);font-size:.76rem;font-weight:700;min-height:16px;margin-bottom:7px;}
+.adiv{display:flex;align-items:center;gap:9px;margin:12px 0;}
+.adiv span{flex:1;height:1px;background:var(--border);}
+.adiv p{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
 <body>
+<div class="bg-glow bg-a"></div>
+<div class="bg-glow bg-b"></div>
+<div class="bg-glow bg-c"></div>
 
-<!-- ── AUTH SCREEN ── -->
-<div id="s-auth" class="screen active">
-  <div class="logo">🧠 BrainRotBattle.io</div>
-  <div class="tagline">Italian Brainrot Territory Battle</div>
-  <div class="card">
-    <div class="tab-row">
-      <button class="tab active" onclick="switchTab('login')">Accedi</button>
-      <button class="tab" onclick="switchTab('register')">Registrati</button>
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="abox">
+    <div class="alogo">🧠 BrainRotBattle</div>
+    <div class="asub">Italian Brainrot Territory Battle</div>
+    <div class="atabs">
+      <button class="atab on" id="tl" onclick="switchTab('l')">Accedi</button>
+      <button class="atab" id="tr" onclick="switchTab('r')">Registrati</button>
     </div>
-
-    <!-- LOGIN -->
-    <div id="tab-login">
-      <input class="inp" id="login-user" placeholder="Username o Email" autocomplete="username"/>
-      <input class="inp" id="login-pass" placeholder="Password" type="password" autocomplete="current-password"/>
-      <div class="err" id="login-err"></div>
-      <button class="btn btn-primary" onclick="doLogin()">Accedi 🍕</button>
-      <button class="btn btn-secondary" onclick="playAsGuest()">Gioca come ospite</button>
+    <div id="fl">
+      <input class="ainp" id="lu" placeholder="Username o Email" autocomplete="username"/>
+      <input class="ainp" id="lp" placeholder="Password" type="password" autocomplete="current-password"/>
+      <div class="aerr" id="le"></div>
+      <button class="abtn p" onclick="doLogin()">ACCEDI</button>
+      <div class="adiv"><span></span><p>oppure</p><span></span></div>
+      <button class="abtn g" onclick="asGuest()">Gioca come ospite</button>
     </div>
-
-    <!-- REGISTER -->
-    <div id="tab-register" style="display:none">
-      <input class="inp" id="reg-user" placeholder="Username (3-16 caratteri)" autocomplete="username"/>
-      <input class="inp" id="reg-email" placeholder="Email" type="email" autocomplete="email"/>
-      <input class="inp" id="reg-pass" placeholder="Password (min. 6 caratteri)" type="password" autocomplete="new-password"/>
-      <div class="err" id="reg-err"></div>
-      <button class="btn btn-primary" onclick="doRegister()">Crea Account 🎮</button>
+    <div id="fr" style="display:none">
+      <input class="ainp" id="ru" placeholder="Username (3–16 caratteri)" autocomplete="username"/>
+      <input class="ainp" id="re" placeholder="Email" type="email" autocomplete="email"/>
+      <input class="ainp" id="rp" placeholder="Password (min. 6 caratteri)" type="password" autocomplete="new-password"/>
+      <div class="aerr" id="rr"></div>
+      <button class="abtn p" onclick="doRegister()">CREA ACCOUNT</button>
+      <div class="adiv"><span></span><p>oppure</p><span></span></div>
+      <button class="abtn g" onclick="asGuest()">Gioca come ospite</button>
     </div>
   </div>
 </div>
 
-<!-- ── MAIN MENU ── -->
-<div id="s-menu" class="screen">
-  <div class="logo">🧠 BrainRotBattle.io</div>
-
-  <!-- Logged-in profile bar -->
-  <div class="profile-bar" id="profile-bar" onclick="showScreen('s-profile')">
-    <div class="pb-avatar" id="pb-avatar">?</div>
-    <div class="pb-info">
-      <div class="pb-name" id="pb-name">-</div>
-      <div class="xp-bar-wrap"><div class="xp-bar" id="pb-xpbar" style="width:0%"></div></div>
-      <div class="pb-level" id="pb-level">Livello 1</div>
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <nav>
+    <div class="logo">BRAINROTBATTLE.IO</div>
+    <div class="online-pill"><div class="pdot"></div><span id="oc">...</span></div>
+    <div class="nav-right">
+      <div class="nav-coins"><canvas class="coin-mini" id="coinCvs"></canvas><span id="nc">0</span></div>
+      <div class="nav-prof">
+        <div>
+          <div class="nav-nm" id="nn">Ospite</div>
+          <div class="nav-lv" id="nl">Livello 1</div>
+        </div>
+        <div class="nav-av" id="na">?</div>
+      </div>
     </div>
-    <div class="pb-coins">🧠 <span id="pb-coins">0</span></div>
+  </nav>
+
+  <div id="left">
+    <div class="card">
+      <div class="card-title">Profilo</div>
+      <div class="prof-row">
+        <div class="prof-av" id="pa">?</div>
+        <div><div class="prof-name" id="pn">Ospite</div><div class="prof-tag" id="pt">#BrainRotter</div></div>
+      </div>
+      <div class="lv-row">
+        <div class="lv-badge">LV <span id="pl">1</span></div>
+        <div class="xp-lbl"><span id="px">0</span> / <span id="pxn">100</span> XP</div>
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="pxf"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Statistiche</div>
+      <div class="sg">
+        <div class="sbox"><div class="sn" id="sg">0</div><div class="sl">Partite</div></div>
+        <div class="sbox"><div class="sn" id="sw">0</div><div class="sl">Vittorie</div></div>
+        <div class="sbox"><div class="sn" id="sb">0%</div><div class="sl">Record</div></div>
+        <div class="sbox"><div class="sn" id="sc">0</div><div class="sl">Coins</div></div>
+      </div>
+    </div>
+    <div class="bp" onclick="alert('Battle Pass — Stagione 1 prossimamente! 🎮')">
+      <div class="bp-head"><div class="bp-lbl">⚡ Battle Pass</div><div class="bp-tag">STAGIONE 1</div></div>
+      <div class="bp-title">Il Grande Cervello</div>
+      <div class="bp-bar"><div class="bp-bar-fill"></div></div>
+      <div class="bp-sub">Prossimamente — Resta sintonizzato</div>
+    </div>
   </div>
 
-  <div class="online-pill">
-    <div class="dot"></div>
-    <span id="onlineCount">Caricamento...</span>
+  <div id="center">
+    <canvas id="char-canvas"></canvas>
+    <div class="skin-tag" id="stag">🌐 Sfera</div>
+    <div class="skin-ctrl">
+      <button class="s-btn" onclick="shiftSkin(-1)">◀</button>
+      <div class="s-dots" id="sdots"></div>
+      <button class="s-btn" onclick="shiftSkin(1)">▶</button>
+    </div>
   </div>
 
-  <div class="skin-picker">
-    <button class="sp-arrow" onclick="shiftSkin(-1)">◀</button>
-    <div class="sp-cards" id="spCards"></div>
-    <button class="sp-arrow" onclick="shiftSkin(1)">▶</button>
+  <div id="right">
+    <div class="card">
+      <div class="card-title">Novità</div>
+      <div class="news-item"><div class="news-tag">🆕 Update</div><div class="news-text">Lobby Fortnite-style + Account System!</div></div>
+      <div class="news-item"><div class="news-tag">🔜 Coming Soon</div><div class="news-text">Battle Pass Stagione 1: Il Grande Cervello</div></div>
+      <div class="news-item"><div class="news-tag">🎯 Torneo</div><div class="news-text">Campionato Tralaleritos — 500€ in palio</div></div>
+    </div>
+    <div class="card" style="flex:1;overflow:hidden;">
+      <div class="card-title">Top Giocatori</div>
+      <div class="lb-list" id="lbl"><div style="color:var(--muted);font-size:.75rem;text-align:center;padding:14px 0">Caricamento...</div></div>
+    </div>
   </div>
 
-  <input class="name-inp inp" id="nameInp" placeholder="Il tuo nome..." maxlength="16" style="width:220px;text-align:center;margin-bottom:14px;"/>
-  <button class="btn-play" id="playBtn" onclick="joinGame()">GIOCA! 🍕</button>
-  <div class="hint">WASD · Frecce · Q E R = Abilità</div>
-
-  <div style="display:flex;gap:10px;margin-top:14px;">
-    <button class="btn btn-secondary" onclick="showScreen('s-profile')" style="padding:8px 16px;font-size:.82rem;margin:0">👤 Profilo</button>
-    <button class="btn btn-danger" onclick="doLogout()" style="padding:8px 16px;font-size:.82rem;margin:0">Esci</button>
-  </div>
-</div>
-
-<!-- ── PROFILE SCREEN ── -->
-<div id="s-profile" class="screen">
-  <div class="logo" style="font-size:1.8rem;margin-bottom:4px;">👤 Profilo</div>
-  <div class="card">
-    <div style="text-align:center;margin-bottom:4px;">
-      <div class="level-badge" id="prof-badge">1</div>
-      <div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#1e3a5f;" id="prof-name">-</div>
-      <div style="font-size:.78rem;color:#64748b;margin-bottom:4px;">Membro dal <span id="prof-since">-</span></div>
+  <div id="foot">
+    <div class="modes">
+      <div class="mode on" id="m0" onclick="selMode(0)">
+        <div class="mbadge live">LIVE</div>
+        <div class="mode-icon">🗺️</div>
+        <div class="mode-name">Territorio</div>
+        <div class="mode-desc">Conquista la mappa</div>
+      </div>
+      <div class="mode locked" id="m1">
+        <div class="mbadge soon">PRESTO</div>
+        <div class="mode-icon">💣</div>
+        <div class="mode-name">Battle Royale</div>
+        <div class="mode-desc">60 giocatori</div>
+      </div>
+      <div class="mode locked" id="m2">
+        <div class="mbadge soon">PRESTO</div>
+        <div class="mode-icon">🏆</div>
+        <div class="mode-name">Torneo</div>
+        <div class="mode-desc">Scala la classifica</div>
+      </div>
+      <div class="mode locked" id="m3">
+        <div class="mbadge soon">PRESTO</div>
+        <div class="mode-icon">🎯</div>
+        <div class="mode-name">Missioni</div>
+        <div class="mode-desc">Sfide giornaliere</div>
+      </div>
     </div>
-    <div class="xp-full"><div class="xp-full-bar" id="prof-xpbar" style="width:0%"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:.75rem;color:#94a3b8;margin-bottom:10px;">
-      <span id="prof-xp-cur">0 XP</span>
-      <span id="prof-xp-next">/ 100 XP</span>
+    <div class="play-wrap">
+      <input class="name-inp" id="nameInp" placeholder="Il tuo nome..." maxlength="16"/>
+      <button class="btn-play" id="playBtn" onclick="joinGame()">▶ GIOCA</button>
     </div>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num" id="s-games">0</div><div class="stat-lbl">Partite</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-wins">0</div><div class="stat-lbl">Vittorie</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-best">0%</div><div class="stat-lbl">Miglior Score</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-coins">0 🧠</div><div class="stat-lbl">BrainCoins</div></div>
-    </div>
-    <button class="btn btn-primary" onclick="showScreen('s-menu')" style="margin-bottom:8px">← Torna al Menu</button>
-    <button class="btn btn-danger" onclick="doLogout()">Esci dall'account</button>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 'use strict';
+let user=null,tok=localStorage.getItem('brn_tok')||null,selSkin=0;
+const SHAPES=['sphere','box','torus','cone','diamond','icosa'];
+const SNAMES=['🌐 Sfera','📦 Cubo','🍩 Toro','🔺 Cono','💎 Diamante','⭐ Stella'];
+const SCOLS=['#3B82F6','#EF4444','#10B981','#F59E0B','#8B5CF6','#EC4899'];
 
-// ── STATE ──
-let currentUser = null;
-let authToken = localStorage.getItem('brainrot_token') || null;
-let selSkin = 0, skinOffset = 0;
-const SKIN_SHAPES = ['sphere','box','torus','cone','diamond','icosa'];
-const PREVIEW_COLORS = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#a855f7','#06b6d4'];
-
-// ── INIT ──
-(async function init() {
-  if (authToken) {
-    const user = await fetchMe();
-    if (user) {
-      currentUser = user;
-      applyUserToUI(user);
-      showScreen('s-menu');
-    } else {
-      authToken = null;
-      localStorage.removeItem('brainrot_token');
-      showScreen('s-auth');
-    }
-  } else {
-    showScreen('s-auth');
-  }
-  buildSkinPreviews('spCards');
-  updateOnlineCount();
-  setInterval(updateOnlineCount, 10000);
+(async()=>{
+  initCoin();initChar();buildDots();pollOnline();setInterval(pollOnline,10000);
+  if(tok){const u=await me();if(u){user=u;applyUser(u);showApp();}else{tok=null;localStorage.removeItem('brn_tok');}}
+  loadLb();
 })();
 
-// ── SCREEN ──
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function switchTab(t){
+  document.getElementById('tl').classList.toggle('on',t==='l');
+  document.getElementById('tr').classList.toggle('on',t==='r');
+  document.getElementById('fl').style.display=t==='l'?'':'none';
+  document.getElementById('fr').style.display=t==='r'?'':'none';
+}
+async function doLogin(){
+  const login=v('lu'),pass=v('lp'),err=document.getElementById('le');
+  err.textContent='';
+  if(!login||!pass){err.textContent='Inserisci tutti i campi';return;}
+  const r=await api('POST','/api/auth/login',{login,password:pass});
+  if(r.error){err.textContent=r.error;return;}
+  tok=r.token;localStorage.setItem('brn_tok',tok);user=r.user;applyUser(r.user);showApp();
+}
+async function doRegister(){
+  const username=v('ru'),email=v('re'),password=v('rp'),err=document.getElementById('rr');
+  err.textContent='';
+  const r=await api('POST','/api/auth/register',{username,email,password});
+  if(r.error){err.textContent=r.error;return;}
+  tok=r.token;localStorage.setItem('brn_tok',tok);user=r.user;applyUser(r.user);showApp();
+}
+function asGuest(){user=null;showApp();}
+function showApp(){
+  document.getElementById('auth-overlay').style.display='none';
+  document.getElementById('app').style.display='grid';
+}
+function v(id){return document.getElementById(id).value.trim();}
+async function api(m,p,b){
+  const h={'Content-Type':'application/json'};
+  if(tok)h['Authorization']='Bearer '+tok;
+  try{const r=await fetch(p,{method:m,headers:h,body:b?JSON.stringify(b):undefined});return r.json();}
+  catch(e){return{error:'Errore di rete'};}
+}
+async function me(){try{const r=await api('GET','/api/auth/me');return r.user||null;}catch{return null;}}
+
+function applyUser(u){
+  selSkin=u.skin||0;updateChar(selSkin);buildDots();
+  const a=u.username[0].toUpperCase();
+  set('nn',u.username);set('nl','Livello '+u.level);set('na',a);set('nc',u.coins);
+  set('pa',a,'av');set('pn',u.username);set('pt','#BrainRotter Lv.'+u.level);
+  set('pl',u.level);set('px',u.xpProgress||0);set('pxn',u.xpForNextLevel||100);
+  const pct=u.xpNeeded>0?Math.round((u.xpProgress/u.xpNeeded)*100):0;
+  setTimeout(()=>{document.getElementById('pxf').style.width=pct+'%';},400);
+  set('sg',u.games);set('sw',u.wins);set('sb',parseFloat(u.best_score||0).toFixed(1)+'%');set('sc',u.coins);
+  document.getElementById('nameInp').value=u.username;
+}
+function set(id,val,cls){const el=document.getElementById(id);if(el)el.textContent=val;}
+
+function selMode(i){
+  document.querySelectorAll('.mode').forEach((c,j)=>c.classList.toggle('on',j===i));
 }
 
-// ── TABS ──
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
-  document.getElementById('tab-login').style.display = tab==='login' ? '' : 'none';
-  document.getElementById('tab-register').style.display = tab==='register' ? '' : 'none';
+async function joinGame(){
+  const name=v('nameInp')||(user?user.username:'Anonimo');
+  const btn=document.getElementById('playBtn');
+  btn.disabled=true;btn.textContent='Connessione...';
+  try{
+    const r=await fetch('/api/best-server');
+    const{ip,port}=await r.json();
+    const params=new URLSearchParams({name,skin:selSkin,token:tok||'',lobby:window.location.origin});
+    window.location.href=`http://${ip}:${port}/game?${params}`;
+  }catch{btn.disabled=false;btn.textContent='▶ GIOCA';}
 }
 
-// ── API HELPERS ──
-async function api(method, path, body, token) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token || authToken) headers['Authorization'] = 'Bearer ' + (token || authToken);
-  const r = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  return r.json();
+async function pollOnline(){
+  try{const r=await fetch('/api/servers');const s=await r.json();const t=s.reduce((a,x)=>a+(x.players||0),0);document.getElementById('oc').textContent=t>0?t+' online':'Sii il primo!';}
+  catch{document.getElementById('oc').textContent='Online';}
+}
+async function loadLb(){
+  try{
+    const d=await api('GET','/api/leaderboard');
+    if(!Array.isArray(d))return;
+    const rnk=['🥇','🥈','🥉'];
+    document.getElementById('lbl').innerHTML=d.slice(0,7).map((u,i)=>
+      `<div class="lb-row"><div class="lb-rk">${rnk[i]||'#'+(i+1)}</div><div class="lb-un">${u.username}</div><div class="lb-xp">Lv.${u.level}</div></div>`
+    ).join('');
+  }catch{}
 }
 
-async function fetchMe() {
-  try {
-    const r = await api('GET', '/api/auth/me');
-    return r.user || null;
-  } catch { return null; }
+// SKIN
+function buildDots(){
+  document.getElementById('sdots').innerHTML=SHAPES.map((_,i)=>`<div class="sdot${i===selSkin?' on':''}" onclick="setSkin(${i})"></div>`).join('');
+}
+function setSkin(i){
+  selSkin=i;updateChar(i);buildDots();document.getElementById('stag').textContent=SNAMES[i];
+  if(tok)fetch('/api/profile/skin',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({skin:i})});
+}
+function shiftSkin(d){setSkin((selSkin+d+SHAPES.length)%SHAPES.length);}
+
+// COIN ANIMATION
+function initCoin(){
+  const c=document.getElementById('coinCvs');if(!c)return;
+  const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true});
+  r.setSize(20,20);r.setClearColor(0,0);
+  const s=new THREE.Scene();s.add(new THREE.AmbientLight(0xffffff,2));
+  const dl=new THREE.DirectionalLight(0xffd700,2.5);dl.position.set(1,2,2);s.add(dl);
+  const cam=new THREE.PerspectiveCamera(38,1,.1,50);cam.position.set(0,0,2.4);
+  const coin=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.12,32),new THREE.MeshStandardMaterial({color:0xf59e0b,metalness:.9,roughness:.1,emissive:0xf59e0b,emissiveIntensity:.25}));
+  s.add(coin);let t=0;(function a(){requestAnimationFrame(a);t+=.05;coin.rotation.y=t;r.render(s,cam);})();
 }
 
-// ── AUTH ──
-async function doLogin() {
-  const login = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const err = document.getElementById('login-err');
-  err.textContent = '';
-  if (!login || !password) { err.textContent = 'Inserisci tutti i campi'; return; }
-  const r = await api('POST', '/api/auth/login', { login, password });
-  if (r.error) { err.textContent = r.error; return; }
-  authToken = r.token;
-  localStorage.setItem('brainrot_token', authToken);
-  currentUser = r.user;
-  applyUserToUI(r.user);
-  showScreen('s-menu');
+// CHARACTER CANVAS
+let cScene,cRenderer,cCamera,cGroup;
+function geoFor(s){
+  if(s==='sphere')return new THREE.SphereGeometry(1.1,32,24);
+  if(s==='box')return new THREE.BoxGeometry(1.7,1.7,1.7);
+  if(s==='torus')return new THREE.TorusGeometry(.9,.38,16,48);
+  if(s==='cone')return new THREE.ConeGeometry(1,1.8,16);
+  if(s==='diamond')return new THREE.OctahedronGeometry(1.2);
+  return new THREE.IcosahedronGeometry(1.15,1);
 }
-
-async function doRegister() {
-  const username = document.getElementById('reg-user').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-pass').value;
-  const err = document.getElementById('reg-err');
-  err.textContent = '';
-  const r = await api('POST', '/api/auth/register', { username, email, password });
-  if (r.error) { err.textContent = r.error; return; }
-  authToken = r.token;
-  localStorage.setItem('brainrot_token', authToken);
-  currentUser = r.user;
-  applyUserToUI(r.user);
-  showScreen('s-menu');
+function initChar(){
+  const cvs=document.getElementById('char-canvas');
+  const W=cvs.offsetWidth||360,H=cvs.offsetHeight||460;
+  cRenderer=new THREE.WebGLRenderer({canvas:cvs,antialias:true,alpha:true});
+  cRenderer.setSize(W,H);cRenderer.setPixelRatio(Math.min(devicePixelRatio,2));cRenderer.setClearColor(0,0);
+  cScene=new THREE.Scene();
+  cCamera=new THREE.PerspectiveCamera(42,W/H,.1,100);cCamera.position.set(0,.5,5.5);cCamera.lookAt(0,.2,0);
+  cScene.add(new THREE.AmbientLight(0x8099ff,1.2));
+  const k=new THREE.DirectionalLight(0xffffff,2.5);k.position.set(4,6,5);cScene.add(k);
+  const f=new THREE.DirectionalLight(0x6699ff,.9);f.position.set(-4,2,-3);cScene.add(f);
+  const pt=new THREE.PointLight(0x3b82f6,2,8);pt.position.set(0,2,2);cScene.add(pt);
+  // Platform
+  const plat=new THREE.Mesh(new THREE.CylinderGeometry(1.8,2,.18,48),new THREE.MeshStandardMaterial({color:0x1e2d4a,metalness:.5,roughness:.4}));
+  plat.position.y=-1.6;cScene.add(plat);
+  // Ring
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.9,.04,8,64),new THREE.MeshStandardMaterial({color:0x3b82f6,emissive:0x3b82f6,emissiveIntensity:2}));
+  ring.rotation.x=Math.PI/2;ring.position.y=-1.49;cScene.add(ring);
+  // Particles
+  const pg=new THREE.BufferGeometry(),pp=new Float32Array(80*3);
+  for(let i=0;i<80;i++){pp[i*3]=(Math.random()-.5)*10;pp[i*3+1]=(Math.random()-.5)*8;pp[i*3+2]=(Math.random()-.5)*6-2;}
+  pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+  cScene.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0x3b82f6,size:.06,transparent:true,opacity:.55})));
+  cGroup=new THREE.Group();cScene.add(cGroup);
+  buildCharMesh(selSkin);
+  window.addEventListener('resize',()=>{const W2=cvs.offsetWidth,H2=cvs.offsetHeight;cCamera.aspect=W2/H2;cCamera.updateProjectionMatrix();cRenderer.setSize(W2,H2);});
+  let t=0;(function anim(){requestAnimationFrame(anim);t+=.013;cGroup.rotation.y=t;cGroup.position.y=Math.sin(t*.7)*.13;pt.intensity=1.8+Math.sin(t*2.3)*.4;cRenderer.render(cScene,cCamera);})();
 }
-
-function playAsGuest() {
-  currentUser = null;
-  showScreen('s-menu');
-  document.getElementById('profile-bar').style.display = 'none';
+function buildCharMesh(idx){
+  while(cGroup.children.length)cGroup.remove(cGroup.children[0]);
+  const col=new THREE.Color(SCOLS[idx]);
+  const mat=new THREE.MeshStandardMaterial({color:col,metalness:.55,roughness:.2});
+  const body=new THREE.Mesh(geoFor(SHAPES[idx]),mat);body.position.y=.1;cGroup.add(body);
+  const rm=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:1.4,transparent:true,opacity:.45});
+  const rring=new THREE.Mesh(new THREE.TorusGeometry(1.5,.05,8,64),rm);rring.rotation.x=Math.PI/2;rring.position.y=-1.3;cGroup.add(rring);
 }
+function updateChar(i){if(cGroup)buildCharMesh(i);}
 
-async function doLogout() {
-  if (authToken) await api('POST', '/api/auth/logout');
-  authToken = null;
-  currentUser = null;
-  localStorage.removeItem('brainrot_token');
-  showScreen('s-auth');
-}
-
-// ── APPLY USER ──
-function applyUserToUI(user) {
-  if (!user) return;
-  selSkin = user.skin || 0;
-  document.getElementById('nameInp').value = user.username;
-  document.getElementById('pb-avatar').textContent = user.username[0].toUpperCase();
-  document.getElementById('pb-name').textContent = user.username;
-  document.getElementById('pb-level').textContent = 'Livello ' + user.level;
-  document.getElementById('pb-coins').textContent = user.coins;
-  const pct = user.xpNeeded > 0 ? Math.round(user.xpProgress / user.xpNeeded * 100) : 100;
-  document.getElementById('pb-xpbar').style.width = pct + '%';
-  document.getElementById('profile-bar').style.display = 'flex';
-
-  // Profile screen
-  document.getElementById('prof-badge').textContent = user.level;
-  document.getElementById('prof-name').textContent = user.username;
-  document.getElementById('prof-since').textContent = new Date(user.created_at*1000).toLocaleDateString('it-IT');
-  document.getElementById('prof-xp-cur').textContent = user.xp + ' XP';
-  document.getElementById('prof-xp-next').textContent = '/ ' + user.xpForNextLevel + ' XP';
-  document.getElementById('prof-xpbar').style.width = pct + '%';
-  document.getElementById('s-games').textContent = user.games;
-  document.getElementById('s-wins').textContent = user.wins;
-  document.getElementById('s-best').textContent = user.best_score.toFixed(1) + '%';
-  document.getElementById('s-coins').textContent = user.coins + ' 🧠';
-
-  buildSkinPreviews('spCards');
-}
-
-// ── SKIN PREVIEWS ──
-function makeShapeGeo(s) {
-  if(s==='sphere') return new THREE.SphereGeometry(.65,20,16);
-  if(s==='box')    return new THREE.BoxGeometry(1,1,1);
-  if(s==='torus')  return new THREE.TorusGeometry(.52,.24,10,28);
-  if(s==='cone')   return new THREE.ConeGeometry(.6,1.1,10);
-  if(s==='diamond')return new THREE.OctahedronGeometry(.72);
-  return new THREE.IcosahedronGeometry(.68,0);
-}
-
-function buildSkinPreviews(id) {
-  const wrap = document.getElementById(id); if(!wrap) return;
-  wrap.innerHTML = '';
-  for(let i=0;i<3;i++){
-    const idx=(skinOffset+i)%SKIN_SHAPES.length;
-    const card=document.createElement('div');
-    card.className='sp-card'+(idx===selSkin?' active':'');
-    const cvs=document.createElement('canvas');cvs.width=cvs.height=56;
-    card.appendChild(cvs);
-    card.onclick=()=>{selSkin=idx;buildSkinPreviews(id);saveSkin(idx);};
-    wrap.appendChild(card);
-    animateSkin(cvs,idx);
-  }
-}
-
-function animateSkin(cvs,idx){
-  const r=new THREE.WebGLRenderer({canvas:cvs,antialias:true,alpha:true});
-  r.setSize(56,56);r.setClearColor(0,0);
-  const s=new THREE.Scene();
-  s.add(new THREE.AmbientLight(0xffffff,1.6));
-  const dl=new THREE.DirectionalLight(0xffffff,1.2);dl.position.set(2,4,3);s.add(dl);
-  const cam=new THREE.PerspectiveCamera(38,1,.1,100);cam.position.set(0,1.4,3.2);cam.lookAt(0,.4,0);
-  const c=new THREE.Color(PREVIEW_COLORS[idx%PREVIEW_COLORS.length]);
-  const mesh=new THREE.Mesh(makeShapeGeo(SKIN_SHAPES[idx]),new THREE.MeshStandardMaterial({color:c,roughness:.25,metalness:.55}));
-  mesh.position.y=.4;s.add(mesh);
-  let t=0,alive=true;
-  function anim(){if(!alive||!cvs.isConnected)return;requestAnimationFrame(anim);t+=.022;mesh.rotation.y=t;r.render(s,cam);}
-  anim();
-}
-
-async function saveSkin(idx) {
-  if (!authToken) return;
-  await api('PATCH', '/api/profile/skin', { skin: idx });
-}
-
-function shiftSkin(d) {
-  skinOffset=(skinOffset+d+SKIN_SHAPES.length)%SKIN_SHAPES.length;
-  selSkin=(selSkin+d+SKIN_SHAPES.length)%SKIN_SHAPES.length;
-  buildSkinPreviews('spCards');
-  saveSkin(selSkin);
-}
-
-// ── ONLINE COUNT ──
-async function updateOnlineCount() {
-  try {
-    const r = await fetch('/api/servers');
-    const servers = await r.json();
-    const total = servers.reduce((a,s)=>a+(s.players||0),0);
-    document.getElementById('onlineCount').textContent = total>0 ? `${total} giocatori online` : 'Sii il primo!';
-  } catch { document.getElementById('onlineCount').textContent = 'Server online'; }
-}
-
-// ── JOIN GAME ──
-async function joinGame() {
-  const name = document.getElementById('nameInp').value.trim() || (currentUser ? currentUser.username : 'Anonimo');
-  const btn = document.getElementById('playBtn');
-  btn.disabled = true; btn.textContent = 'Connessione...';
-  try {
-    const r = await fetch('/api/best-server');
-    const {ip, port} = await r.json();
-    const lobbyOrigin = window.location.origin; // e.g. http://46.225.224.163:3000
-    const params = new URLSearchParams({ name, skin: selSkin, token: authToken||'', lobby: lobbyOrigin });
-    window.location.href = `http://${ip}:${port}/game?${params}`;
-  } catch {
-    btn.disabled = false; btn.textContent = 'GIOCA! 🍕';
-  }
-}
-
-document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-document.getElementById('nameInp') && document.getElementById('nameInp').addEventListener('keydown', e => { if(e.key==='Enter') joinGame(); });
+document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('nameInp').addEventListener('keydown',e=>{if(e.key==='Enter')joinGame();});
+document.addEventListener('keydown',e=>{if(document.getElementById('app').style.display!=='none'){if(e.key==='ArrowLeft')shiftSkin(-1);if(e.key==='ArrowRight')shiftSkin(1);}});
 </script>
 </body>
 </html>
