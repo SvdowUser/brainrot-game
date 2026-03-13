@@ -306,7 +306,11 @@ function showScreen(id){
   document.getElementById(id).classList.add('active');
 }
 
-function goMenu(){showScreen('s-menu');if(socket){socket.disconnect();socket=null;}buildSkinPreviews('spCards');}
+function goMenu(){
+  const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
+  if(socket){socket.disconnect();socket=null;}
+  window.location.href = lobbyBase;
+}
 
 // ═══════════════════════════════════════════
 //  THREE.JS
@@ -606,10 +610,15 @@ function joinGame(){
 }
 
 function calcMyRank() {
-  const scores = Array.from(playerStates.values()).filter(p=>!p.isBot).map(p=>p.score);
-  scores.sort((a,b)=>b-a);
-  const myScore = playerStates.get(mySid)?.score||0;
-  return scores.indexOf(myScore)+1 || scores.length;
+  const myState = playerStates.get(mySid);
+  if (!myState) return 99;
+  const myScore = myState.score || 0;
+  // Count how many OTHER human players (non-bot) have MORE territory than me
+  let rank = 1;
+  for (const [sid, p] of playerStates) {
+    if (sid !== mySid && !p.isBot && p.score > myScore) rank++;
+  }
+  return rank;
 }
 
 async function showResultsScreen(territory, rank, elapsed) {
