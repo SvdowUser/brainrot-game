@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tralaleritos.io</title>
+<title>BrainRotBattle.io</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -94,7 +94,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#dbeafe;font-family:
 
 <!-- MENU -->
 <div id="s-menu" class="screen active">
-  <div class="logo">🇮🇹 Tralaleritos.io</div>
+  <div class="logo">🧠 BrainRotBattle.io</div>
   <div class="tagline">Italian Brainrot Territory Battle</div>
   <div class="skin-picker">
     <button class="sp-arrow" onclick="shiftSkin(-1)">◀</button>
@@ -437,11 +437,15 @@ function joinGame(){
 
   socket.on('step',(data)=>{
     // Update positions
-    data.players.forEach(p=>{
+    (data.positions||data.players||[]).forEach(p=>{
       const state=playerStates.get(p.sid);
       if(!state)return;
-      state.x=p.x;state.y=p.y;state.score=p.score;state.alive=p.alive;
+      state.x=p.x;state.y=p.y;state.alive=p.alive;
       const{x,z}=cw(p.x,p.y);state._tx=x;state._tz=z;
+    });
+    // Update scores separately
+    (data.scores||[]).forEach(s=>{
+      const state=playerStates.get(s.sid);if(state)state.score=s.score;
     });
     // Tiles
     data.tiles.forEach(t=>{
@@ -454,11 +458,8 @@ function joinGame(){
       const state=playerStates.get(tr.sid);if(!state)return;
       if(tr.clear){clearTrailMeshes(tr.sid);state.trail=[];}
       else{
-        // Sync trail meshes
         const newSet=new Set(tr.trail.map(t=>`${t.x},${t.y}`));
-        // Remove old
         for(const[k]of trMeshes){if(k.startsWith(tr.sid+'|')){const pos=k.split('|')[1];if(!newSet.has(pos)){scene.remove(trMeshes.get(k));trMeshes.delete(k);}}}
-        // Add new
         tr.trail.forEach(t=>setTrailMesh(tr.sid,t.x,t.y,state.color,true));
         state.trail=tr.trail;
       }
@@ -507,6 +508,26 @@ function joinGame(){
     if(document.getElementById('s-game').classList.contains('active'))goMenu();
   });
 
+  // Server tells us skill cooldown
+  socket.on('skillCd',({skill,cd})=>{
+    sCD[skill]=cd; sActive[skill]=false; updateSkillUI();
+  });
+
+  // Visual effect when someone uses a skill
+  socket.on('skill',({sid,skill,dur,x,y})=>{
+    const state=playerStates.get(sid);if(!state)return;
+    const{x:wx,z:wz}=cw(state.x,state.y);
+    if(skill===0){// Fulmine - yellow burst
+      burst(wx,wz,'#f59e0b',14);
+      if(sid===mySid){sActive[0]=true;sTmr[0]=dur||3;updateSkillUI();}
+    } else if(skill===1){// Scudo - blue shield flash
+      burst(wx,wz,'#3b82f6',10);
+      if(sid===mySid){sActive[1]=true;sTmr[1]=dur||5;updateSkillUI();}
+    } else if(skill===2){// Turbo - cyan trail burst
+      burst(wx,wz,'#06b6d4',16);
+    }
+  });
+
   // Ping
   setInterval(()=>{pingStart=Date.now();socket.emit('ping');},2000);
   socket.on('pong_',()=>{pingMs=Date.now()-pingStart;document.getElementById('ping').textContent=pingMs+'ms';});
@@ -551,11 +572,13 @@ addEventListener('touchend',e=>{
 },{passive:true});
 
 // ═══════════════════════════════════════════
-//  SKILLS (local visual only)
+//  SKILLS (send to server)
 // ═══════════════════════════════════════════
 function useSkill(i){
-  if(sCD[i]>0||sActive[i])return;
-  sActive[i]=true;sTmr[i]=SDEFS[i].dur;sCD[i]=SDEFS[i].cd;updateSkillUI();
+  if(sCD[i]>0||sActive[i]||!socket)return;
+  socket.emit('skill',{skill:i});
+  // Optimistic local feedback
+  if(i===2){ burst(0,0,'#06b6d4',8); } // Turbo instant feel
 }
 function updateSkillUI(){
   for(let i=0;i<3;i++){
@@ -596,14 +619,14 @@ function updateSkillUI(){
     if(m._ring)m._ring.rotation.z+=dt*1.4;
   }
 
-  // Camera follows me
+  // Camera follows me - smoother
   if(myState&&myState.alive){
-    const lc=Math.min(1,dt*3.2);
+    const lc=Math.min(1,dt*5);
     camCX+=(myState._tx-camCX)*lc;
     camCZ+=(myState._tz-camCZ)*lc;
-    camera.position.x+=(camCX-camera.position.x)*lc;
-    camera.position.z+=(camCZ+30-camera.position.z)*lc;
-    camera.position.y+=((38)-camera.position.y)*lc;
+    camera.position.x+=(camCX-camera.position.x)*Math.min(1,dt*4);
+    camera.position.z+=(camCZ+30-camera.position.z)*Math.min(1,dt*4);
+    camera.position.y+=((38)-camera.position.y)*Math.min(1,dt*4);
     camera.lookAt(camCX,0,camCZ);
 
     // Score & leaderboard
