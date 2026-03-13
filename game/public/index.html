@@ -267,7 +267,7 @@ sun.shadow.mapSize.set(2048,2048);
 sun.shadow.camera.near=1;sun.shadow.camera.far=400;
 sun.shadow.camera.left=sun.shadow.camera.bottom=-140;sun.shadow.camera.right=sun.shadow.camera.top=140;
 scene.add(sun);
-scene.add(Object.assign(new THREE.DirectionalLight(0xe0f2fe,.5),{position:new THREE.Vector3(-20,30,-20)}));
+const fillLight=new THREE.DirectionalLight(0xe0f2fe,.5);fillLight.position.set(-20,30,-20);scene.add(fillLight);
 
 // Floor
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(WW+8,HH+8),new THREE.MeshStandardMaterial({color:0xf0f9ff,roughness:.95,metalness:0}));
@@ -625,7 +625,7 @@ addEventListener('resize',()=>{
 });
 
 // Auto-join if URL has name param (coming from lobby)
-(function autoJoin(){
+window.addEventListener('load',function(){
   const params=new URLSearchParams(window.location.search);
   const name=params.get('name');
   const skin=parseInt(params.get('skin')||'0');
@@ -633,10 +633,9 @@ addEventListener('resize',()=>{
     selSkin=skin;
     document.getElementById('nameInp').value=name;
     buildSkinPreviews('spCards');
-    // Small delay to let Three.js init
-    setTimeout(()=>joinGame(),300);
+    setTimeout(()=>joinGame(),800);
   }
-})();
+});
 </script>
 </body>
 </html>
