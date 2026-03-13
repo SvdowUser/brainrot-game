@@ -78,13 +78,31 @@ html,body{width:100%;height:100%;overflow:hidden;background:#dbeafe;font-family:
 .sk-key{position:absolute;bottom:3px;right:5px;font-size:.56rem;font-weight:800;color:#94a3b8;}
 .sk-cd{position:absolute;inset:0;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.1rem;color:#1e3a5f;border-radius:14px;}
 
-/* ── DEATH ── */
-#s-death{background:linear-gradient(150deg,#e0f2fe 0%,#f0fdf4 60%,#fef9c3 100%);}
-.death-icon{font-size:3.5rem;margin-bottom:4px;}
-.death-title{font-family:'Fredoka One',cursive;font-size:2.8rem;color:#ef4444;margin-bottom:6px;}
-.death-stat{font-size:1rem;color:#475569;font-weight:700;margin-bottom:20px;}
-.death-stat span{color:#1d4ed8;}
-.death-msg{font-size:.85rem;color:#94a3b8;margin-top:-12px;margin-bottom:16px;}
+/* ── RESULTS ── */
+#s-death{background:linear-gradient(150deg,#e0f2fe 0%,#f0fdf4 60%,#fef9c3 100%);overflow-y:auto;}
+.res-title{font-family:'Fredoka One',cursive;font-size:2.6rem;margin-bottom:2px;}
+.res-title.dead{color:#ef4444;}
+.res-title.win{color:#22c55e;}
+.res-sub{font-size:.8rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#94a3b8;margin-bottom:18px;}
+.res-card{background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-radius:20px;border:1px solid rgba(255,255,255,.95);box-shadow:0 6px 24px rgba(0,0,0,.07);padding:20px 24px;width:100%;max-width:340px;margin-bottom:12px;}
+.res-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.res-stat{background:#f8fafc;border-radius:12px;padding:10px;text-align:center;}
+.res-stat-num{font-family:'Fredoka One',cursive;font-size:1.4rem;color:#1e3a5f;}
+.res-stat-lbl{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;}
+/* XP bar */
+.xp-section{margin-top:4px;}
+.xp-header{display:flex;justify-content:space-between;font-size:.75rem;font-weight:800;color:#64748b;margin-bottom:6px;}
+.xp-track{width:100%;height:12px;background:#e2e8f0;border-radius:100px;overflow:hidden;}
+.xp-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:100px;transition:width 1.2s cubic-bezier(.22,1,.36,1);}
+.xp-gained{font-family:'Fredoka One',cursive;font-size:1rem;color:#3b82f6;text-align:center;margin-top:6px;}
+/* Level up */
+.levelup-badge{background:linear-gradient(135deg,#f59e0b,#f97316);color:white;font-family:'Fredoka One',cursive;font-size:1rem;padding:8px 20px;border-radius:100px;text-align:center;margin:8px 0;box-shadow:0 4px 16px rgba(245,158,11,.4);animation:pop .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+/* HUD profile pill */
+.hud-profile{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-radius:100px;padding:5px 12px 5px 5px;border:1px solid rgba(255,255,255,.9);box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.hud-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:.75rem;color:white;}
+.hud-lvl{font-family:'Fredoka One',cursive;font-size:.82rem;color:#1e3a5f;}
+.hud-coins{font-size:.75rem;font-weight:800;color:#f59e0b;margin-left:2px;}
 
 /* Ping */
 #ping{position:absolute;bottom:14px;left:14px;font-size:.7rem;font-weight:700;color:#94a3b8;z-index:60;}
@@ -120,7 +138,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#dbeafe;font-family:
 <div id="s-game" class="screen">
   <canvas id="c3d"></canvas>
   <!-- HUD -->
-  <div class="hud hud-tl">
+  <div class="hud hud-tl" style="display:flex;flex-direction:column;gap:7px;">
+    <div class="hud-profile" id="hudProfile" style="display:none;">
+      <div class="hud-avatar" id="hudAvatar">?</div>
+      <div>
+        <div class="hud-lvl">Lv.<span id="hudLevel">1</span></div>
+        <div class="hud-coins">🧠 <span id="hudCoins">0</span></div>
+      </div>
+    </div>
     <div class="card score-card">
       <div class="score-lbl">Territorio</div>
       <div class="score-val" id="scoreVal">0.0%</div>
@@ -147,17 +172,54 @@ html,body{width:100%;height:100%;overflow:hidden;background:#dbeafe;font-family:
   <div id="name-labels"></div>
 </div>
 
-<!-- DEATH -->
+<!-- RESULTS -->
 <div id="s-death" class="screen">
-  <div class="death-icon">💀</div>
-  <div class="death-title">Sei morto!</div>
-  <div class="death-stat">Territorio: <span id="deathPct">0</span>%</div>
+  <div id="resIcon" style="font-size:3.2rem;margin-bottom:4px;">💀</div>
+  <div class="res-title" id="resTitle">Sei morto!</div>
+  <div class="res-sub" id="resSub">PARTITA FINITA</div>
+
+  <!-- Stats card -->
+  <div class="res-card">
+    <div class="res-stats">
+      <div class="res-stat">
+        <div class="res-stat-num" id="resTerr">0%</div>
+        <div class="res-stat-lbl">Territorio</div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-num" id="resRank">#?</div>
+        <div class="res-stat-lbl">Posizione</div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-num" id="resCoins">+0 🧠</div>
+        <div class="res-stat-lbl">BrainCoins</div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-num" id="resTime">0s</div>
+        <div class="res-stat-lbl">Durata</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- XP card (only for logged-in) -->
+  <div class="res-card" id="resXpCard" style="display:none;">
+    <div id="resLevelUp" class="levelup-badge" style="display:none;">🎉 LEVEL UP! Livello <span id="resNewLevel">2</span>!</div>
+    <div class="xp-section">
+      <div class="xp-header">
+        <span>Livello <span id="resLevel">1</span></span>
+        <span id="resXpText">0 / 100 XP</span>
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="resXpFill" style="width:0%"></div></div>
+      <div class="xp-gained" id="resXpGained">+0 XP</div>
+    </div>
+  </div>
+
+  <!-- Skin picker -->
   <div class="skin-picker" id="deathPicker">
     <button class="sp-arrow" onclick="shiftSkin(-1)">◀</button>
     <div class="sp-cards" id="spCardsD"></div>
     <button class="sp-arrow" onclick="shiftSkin(1)">▶</button>
   </div>
-  <div class="death-msg">Scegli il tuo skin e riprova!</div>
+
   <button class="btn-play" onclick="respawn()">Riprova! 🍕</button>
   <button style="margin-top:8px;background:none;border:none;color:#94a3b8;font-size:.85rem;cursor:pointer;font-family:Nunito,sans-serif;" onclick="goMenu()">← Menu principale</button>
 </div>
@@ -404,6 +466,9 @@ let pingStart=0, pingMs=0;
 //  SOCKET CONNECTION
 // ═══════════════════════════════════════════
 function joinGame(){
+  const params = new URLSearchParams(window.location.search);
+  window._lobbyBase = params.get('lobby') || 'http://46.225.224.163:3000';
+  _gameStartTime = Date.now();
   const name=document.getElementById('nameInp').value.trim()||'Anonimo';
   showScreen('s-connecting');
 
@@ -477,9 +542,11 @@ function joinGame(){
       clearTrailMeshes(sid);
       const{x,z}=cw(state.x,state.y);burst(x,z,state.color,12);
       if(sid===mySid){
-        document.getElementById('deathPct').textContent=state.score.toFixed(1);
+        const finalScore = state.score||0;
+        const rank = calcMyRank();
+        const elapsed = Math.floor((Date.now()-_gameStartTime)/1000);
         buildSkinPreviews('spCardsD');
-        setTimeout(()=>showScreen('s-death'),600);
+        setTimeout(()=>showResultsScreen(finalScore, rank, elapsed), 600);
       }
     });
   });
@@ -536,6 +603,82 @@ function joinGame(){
   // Ping
   setInterval(()=>{pingStart=Date.now();socket.emit('ping');},2000);
   socket.on('pong_',()=>{pingMs=Date.now()-pingStart;document.getElementById('ping').textContent=pingMs+'ms';});
+}
+
+function calcMyRank() {
+  const scores = Array.from(playerStates.values()).filter(p=>!p.isBot).map(p=>p.score);
+  scores.sort((a,b)=>b-a);
+  const myScore = playerStates.get(mySid)?.score||0;
+  return scores.indexOf(myScore)+1 || scores.length;
+}
+
+async function showResultsScreen(territory, rank, elapsed) {
+  // Fill basic stats
+  document.getElementById('resTerr').textContent = territory.toFixed(1)+'%';
+  document.getElementById('resRank').textContent = '#'+rank;
+  document.getElementById('resTime').textContent = elapsed>60 ? Math.floor(elapsed/60)+'m '+( elapsed%60)+'s' : elapsed+'s';
+
+  // Coins estimate (even for guests show something)
+  const coins = Math.floor(5 + territory + (rank===1?20:0));
+  document.getElementById('resCoins').textContent = '+'+coins+' 🧠';
+
+  // Title
+  const isTop3 = rank<=3;
+  document.getElementById('resIcon').textContent = rank===1?'🏆':rank<=3?'🥈':'💀';
+  document.getElementById('resTitle').textContent = rank===1?'Vittoria!':rank<=3?'Ottimo!':'Sei morto!';
+  document.getElementById('resTitle').className = 'res-title '+(isTop3?'win':'dead');
+  document.getElementById('resSub').textContent = isTop3?'OTTIMA PARTITA!':'PARTITA FINITA';
+
+  showScreen('s-death');
+
+  // XP - only for logged-in users
+  const token = window._authToken;
+  if (!token) return;
+
+  const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
+  try {
+    const r = await fetch(lobbyBase+'/api/game/result', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ token, territory, won: rank===1 })
+    });
+    const d = await r.json();
+    if (!d.ok) return;
+
+    // Show XP card
+    const xpCard = document.getElementById('resXpCard');
+    xpCard.style.display = 'block';
+
+    // Level up?
+    if (d.levelUp) {
+      const lu = document.getElementById('resLevelUp');
+      lu.style.display = 'block';
+      document.getElementById('resNewLevel').textContent = d.newLevel;
+    }
+
+    // XP bar animation
+    const level = d.newLevel || (window._profile?.level||1);
+    const xpForLevel = l => Math.floor(100 * Math.pow(l,1.5));
+    const xpNeeded = xpForLevel(level+1) - xpForLevel(level);
+    const xpProgress = d.newXp - xpForLevel(level);
+    const pct = Math.max(0, Math.min(100, xpProgress/xpNeeded*100));
+
+    document.getElementById('resLevel').textContent = level;
+    document.getElementById('resXpText').textContent = xpProgress+' / '+xpNeeded+' XP';
+    document.getElementById('resXpGained').textContent = '+'+d.xpGained+' XP';
+    document.getElementById('resCoins').textContent = '+'+d.coinsGained+' 🧠';
+
+    // Animate bar
+    setTimeout(()=>{ document.getElementById('resXpFill').style.width = pct+'%'; }, 300);
+
+    // Update HUD
+    if (window._profile) {
+      window._profile.level = level;
+      window._profile.coins = (window._profile.coins||0)+d.coinsGained;
+      document.getElementById('hudLevel').textContent = level;
+      document.getElementById('hudCoins').textContent = window._profile.coins;
+    }
+  } catch(e) { console.error('XP error:', e); }
 }
 
 function respawn(){
@@ -695,13 +838,36 @@ window.addEventListener('load',function(){
   const params=new URLSearchParams(window.location.search);
   const name=params.get('name');
   const skin=parseInt(params.get('skin')||'0');
+  const token=params.get('token')||'';
+  const lobby=params.get('lobby')||'http://46.225.224.163:3000';
+  window._lobbyBase = lobby;
+  if(token) window._authToken=token;
   if(name){
     selSkin=skin;
     document.getElementById('nameInp').value=name;
     buildSkinPreviews('spCards');
+    if(token) loadProfileHUD(token);
     setTimeout(()=>joinGame(),800);
   }
 });
+
+async function loadProfileHUD(token) {
+  try {
+    const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
+    const r = await fetch(lobbyBase+'/api/auth/me', { headers:{ 'Authorization':'Bearer '+token } });
+    if (!r.ok) return;
+    const { user } = await r.json();
+    if (!user) return;
+    window._profile = user;
+    document.getElementById('hudAvatar').textContent = user.username[0].toUpperCase();
+    document.getElementById('hudLevel').textContent = user.level;
+    document.getElementById('hudCoins').textContent = user.coins;
+    document.getElementById('hudProfile').style.display = 'flex';
+  } catch(e) { /* guest */ }
+}
+
+let _gameStartTime = Date.now();
+function resetGameTimer() { _gameStartTime = Date.now(); }
 </script>
 </body>
 </html>
