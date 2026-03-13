@@ -214,6 +214,8 @@ io.on('connection',socket=>{
   });
 });
 
+// Route /game → serve the game client
+app.get('/game',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 app.get('/api/status',(req,res)=>res.json({lobbies:lobbies.size,players:Array.from(lobbies.values()).reduce((a,l)=>a+l.players.size,0)}));
 app.get('/health',(req,res)=>res.json({ok:true}));
 
