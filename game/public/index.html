@@ -623,6 +623,20 @@ addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
+
+// Auto-join if URL has name param (coming from lobby)
+(function autoJoin(){
+  const params=new URLSearchParams(window.location.search);
+  const name=params.get('name');
+  const skin=parseInt(params.get('skin')||'0');
+  if(name){
+    selSkin=skin;
+    document.getElementById('nameInp').value=name;
+    buildSkinPreviews('spCards');
+    // Small delay to let Three.js init
+    setTimeout(()=>joinGame(),300);
+  }
+})();
 </script>
 </body>
 </html>
