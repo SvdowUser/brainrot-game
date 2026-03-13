@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -13,14 +14,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif
 .screen.active{display:flex;}
 
 /* ── SHARED ── */
-.logo{font-family:'Fredoka One',cursive;font-size:clamp(2rem,6vw,4rem);color:#1e3a5f;animation:bob 2.8s ease-in-out infinite;margin-bottom:4px;}
+.logo{font-family:‘Fredoka One’,cursive;font-size:clamp(2rem,6vw,4rem);color:#1e3a5f;animation:bob 2.8s ease-in-out infinite;margin-bottom:4px;}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .tagline{font-size:.8rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:24px;}
 .card{background:rgba(255,255,255,.9);backdrop-filter:blur(16px);border-radius:20px;border:1px solid rgba(255,255,255,.9);box-shadow:0 8px 32px rgba(0,0,0,.08);padding:28px 32px;width:100%;max-width:380px;}
-.inp{width:100%;background:white;border:2px solid #e2e8f0;border-radius:12px;padding:11px 16px;font-size:.95rem;font-family:'Nunito',sans-serif;color:#1e3a5f;outline:none;margin-bottom:10px;transition:border .2s;}
+.inp{width:100%;background:white;border:2px solid #e2e8f0;border-radius:12px;padding:11px 16px;font-size:.95rem;font-family:‘Nunito’,sans-serif;color:#1e3a5f;outline:none;margin-bottom:10px;transition:border .2s;}
 .inp:focus{border-color:#3b82f6;}
 .inp::placeholder{color:#94a3b8;}
-.btn{width:100%;padding:13px;font-size:1rem;font-family:'Fredoka One',cursive;border:none;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:8px;letter-spacing:.5px;}
+.btn{width:100%;padding:13px;font-size:1rem;font-family:‘Fredoka One’,cursive;border:none;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:8px;letter-spacing:.5px;}
 .btn-primary{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;box-shadow:0 4px 16px rgba(59,130,246,.35);}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,.45);}
 .btn-secondary{background:rgba(59,130,246,.08);color:#3b82f6;border:2px solid rgba(59,130,246,.2);}
@@ -40,27 +41,27 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif
 .sp-cards{display:flex;gap:8px;}
 .sp-card{width:64px;height:64px;border-radius:14px;border:3px solid transparent;cursor:pointer;background:white;box-shadow:0 3px 12px rgba(0,0,0,.08);overflow:hidden;transition:all .2s;}
 .sp-card.active{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2);transform:scale(1.06);}
-.btn-play{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:14px 56px;font-size:1.2rem;font-family:'Fredoka One',cursive;border-radius:100px;cursor:pointer;box-shadow:0 5px 20px rgba(59,130,246,.4);transition:all .2s;margin-bottom:8px;}
+.btn-play{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:14px 56px;font-size:1.2rem;font-family:‘Fredoka One’,cursive;border-radius:100px;cursor:pointer;box-shadow:0 5px 20px rgba(59,130,246,.4);transition:all .2s;margin-bottom:8px;}
 .btn-play:hover{transform:translateY(-2px);}
 .hint{font-size:.72rem;color:#94a3b8;font-weight:700;}
 
 /* ── PROFILE BAR ── */
 .profile-bar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-radius:100px;padding:8px 16px;border:1px solid rgba(255,255,255,.9);box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:16px;cursor:pointer;transition:all .2s;}
 .profile-bar:hover{background:rgba(255,255,255,.95);}
-.pb-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:.9rem;color:white;}
+.pb-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:‘Fredoka One’,cursive;font-size:.9rem;color:white;}
 .pb-info{flex:1;}
 .pb-name{font-weight:800;font-size:.88rem;color:#1e3a5f;}
 .pb-level{font-size:.72rem;color:#64748b;font-weight:700;}
-.pb-coins{display:flex;align-items:center;gap:4px;font-family:'Fredoka One',cursive;font-size:.9rem;color:#f59e0b;}
+.pb-coins{display:flex;align-items:center;gap:4px;font-family:‘Fredoka One’,cursive;font-size:.9rem;color:#f59e0b;}
 .xp-bar-wrap{width:100%;height:5px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin-top:3px;}
 .xp-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:10px;transition:width .5s;}
 
 /* ── PROFILE SCREEN ── */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
 .stat-card{background:#f8fafc;border-radius:12px;padding:12px;text-align:center;}
-.stat-num{font-family:'Fredoka One',cursive;font-size:1.5rem;color:#1e3a5f;}
+.stat-num{font-family:‘Fredoka One’,cursive;font-size:1.5rem;color:#1e3a5f;}
 .stat-lbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;}
-.level-badge{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.4rem;color:white;margin:0 auto 8px;box-shadow:0 4px 16px rgba(59,130,246,.35);}
+.level-badge{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-family:‘Fredoka One’,cursive;font-size:1.4rem;color:white;margin:0 auto 8px;box-shadow:0 4px 16px rgba(59,130,246,.35);}
 .xp-full{width:100%;height:10px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin:8px 0 4px;}
 .xp-full-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:10px;transition:width .6s;}
 
@@ -73,10 +74,12 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif
 .guest-bar{display:flex;gap:8px;margin-bottom:14px;}
 .guest-bar .btn{margin:0;padding:10px 16px;font-size:.85rem;}
 </style>
+
 </head>
 <body>
 
 <!-- ── AUTH SCREEN ── -->
+
 <div id="s-auth" class="screen active">
   <div class="logo">🧠 BrainRotBattle.io</div>
   <div class="tagline">Italian Brainrot Territory Battle</div>
@@ -86,31 +89,36 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif
       <button class="tab" onclick="switchTab('register')">Registrati</button>
     </div>
 
-    <!-- LOGIN -->
-    <div id="tab-login">
-      <input class="inp" id="login-user" placeholder="Username o Email" autocomplete="username"/>
-      <input class="inp" id="login-pass" placeholder="Password" type="password" autocomplete="current-password"/>
-      <div class="err" id="login-err"></div>
-      <button class="btn btn-primary" onclick="doLogin()">Accedi 🍕</button>
-      <button class="btn btn-secondary" onclick="playAsGuest()">Gioca come ospite</button>
-    </div>
+```
+<!-- LOGIN -->
+<div id="tab-login">
+  <input class="inp" id="login-user" placeholder="Username o Email" autocomplete="username"/>
+  <input class="inp" id="login-pass" placeholder="Password" type="password" autocomplete="current-password"/>
+  <div class="err" id="login-err"></div>
+  <button class="btn btn-primary" onclick="doLogin()">Accedi 🍕</button>
+  <button class="btn btn-secondary" onclick="playAsGuest()">Gioca come ospite</button>
+</div>
 
-    <!-- REGISTER -->
-    <div id="tab-register" style="display:none">
-      <input class="inp" id="reg-user" placeholder="Username (3-16 caratteri)" autocomplete="username"/>
-      <input class="inp" id="reg-email" placeholder="Email" type="email" autocomplete="email"/>
-      <input class="inp" id="reg-pass" placeholder="Password (min. 6 caratteri)" type="password" autocomplete="new-password"/>
-      <div class="err" id="reg-err"></div>
-      <button class="btn btn-primary" onclick="doRegister()">Crea Account 🎮</button>
-    </div>
+<!-- REGISTER -->
+<div id="tab-register" style="display:none">
+  <input class="inp" id="reg-user" placeholder="Username (3-16 caratteri)" autocomplete="username"/>
+  <input class="inp" id="reg-email" placeholder="Email" type="email" autocomplete="email"/>
+  <input class="inp" id="reg-pass" placeholder="Password (min. 6 caratteri)" type="password" autocomplete="new-password"/>
+  <div class="err" id="reg-err"></div>
+  <button class="btn btn-primary" onclick="doRegister()">Crea Account 🎮</button>
+</div>
+```
+
   </div>
 </div>
 
 <!-- ── MAIN MENU ── -->
+
 <div id="s-menu" class="screen">
   <div class="logo">🧠 BrainRotBattle.io</div>
 
   <!-- Logged-in profile bar -->
+
   <div class="profile-bar" id="profile-bar" onclick="showScreen('s-profile')">
     <div class="pb-avatar" id="pb-avatar">?</div>
     <div class="pb-info">
@@ -143,6 +151,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif
 </div>
 
 <!-- ── PROFILE SCREEN ── -->
+
 <div id="s-profile" class="screen">
   <div class="logo" style="font-size:1.8rem;margin-bottom:4px;">👤 Profilo</div>
   <div class="card">
@@ -168,6 +177,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
 'use strict';
 
@@ -380,5 +390,6 @@ async function joinGame() {
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('nameInp') && document.getElementById('nameInp').addEventListener('keydown', e => { if(e.key==='Enter') joinGame(); });
 </script>
+
 </body>
 </html>
