@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BrainRotBattle.io</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;}
+body{background:linear-gradient(150deg,#e0f2fe 0%,#f0fdf4 60%,#fef9c3 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+.logo{font-family:'Fredoka One',cursive;font-size:clamp(2.5rem,7vw,5rem);color:#1e3a5f;text-shadow:0 3px 0 rgba(0,0,0,.07);animation:bob 2.8s ease-in-out infinite;margin-bottom:4px;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.tagline{font-size:.85rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:28px;}
+
+.skin-picker{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.sp-arrow{width:36px;height:36px;border-radius:50%;border:none;background:rgba(30,58,95,.1);cursor:pointer;font-size:1.1rem;color:#1e3a5f;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.sp-arrow:hover{background:rgba(30,58,95,.2);transform:scale(1.1);}
+.sp-cards{display:flex;gap:8px;}
+.sp-card{width:68px;height:68px;border-radius:16px;border:3px solid transparent;cursor:pointer;background:white;box-shadow:0 3px 12px rgba(0,0,0,.1);overflow:hidden;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.sp-card:hover{transform:scale(1.05);}
+.sp-card.active{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2),0 3px 12px rgba(0,0,0,.15);transform:scale(1.08);}
+
+.name-inp{background:white;border:2px solid #e2e8f0;border-radius:14px;padding:12px 20px;font-size:1rem;font-family:'Nunito',sans-serif;color:#1e3a5f;outline:none;width:220px;text-align:center;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:border .2s;}
+.name-inp:focus{border-color:#3b82f6;}
+.name-inp::placeholder{color:#94a3b8;}
+
+.btn-play{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:14px 56px;font-size:1.2rem;font-family:'Fredoka One',cursive;border-radius:100px;cursor:pointer;box-shadow:0 5px 20px rgba(59,130,246,.4);transition:all .2s;letter-spacing:.5px;margin-bottom:10px;}
+.btn-play:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(59,130,246,.5);}
+.btn-play:active{transform:translateY(0);}
+.btn-play:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+
+.hint{font-size:.75rem;color:#94a3b8;font-weight:600;}
+.status{font-size:.8rem;color:#64748b;margin-top:12px;font-weight:600;}
+.status.error{color:#ef4444;}
+
+.players-online{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.7);border-radius:100px;padding:6px 14px;margin-bottom:16px;font-size:.8rem;font-weight:700;color:#475569;}
+.dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+
+<div class="logo">🧠 BrainRotBattle.io</div>
+<div class="tagline">Italian Brainrot Territory Battle</div>
+
+<div class="players-online">
+  <div class="dot"></div>
+  <span id="onlineCount">Caricamento...</span>
+</div>
+
+<div class="skin-picker">
+  <button class="sp-arrow" onclick="shiftSkin(-1)">◀</button>
+  <div class="sp-cards" id="spCards"></div>
+  <button class="sp-arrow" onclick="shiftSkin(1)">▶</button>
+</div>
+
+<input class="name-inp" id="nameInp" placeholder="Il tuo nome..." maxlength="14"/>
+<button class="btn-play" id="playBtn" onclick="joinGame()">GIOCA! 🍕</button>
+<div class="hint">WASD · Frecce · Q E R = Abilità</div>
+<div class="status" id="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const SKIN_SHAPES=['sphere','box','torus','cone','diamond','icosa'];
+const PREVIEW_COLORS=['#3b82f6','#ef4444','#22c55e','#f59e0b','#a855f7','#06b6d4'];
+let selSkin=0, skinOffset=0;
+
+function makeShapeGeo(s){
+  if(s==='sphere') return new THREE.SphereGeometry(.65,20,16);
+  if(s==='box')    return new THREE.BoxGeometry(1,1,1);
+  if(s==='torus')  return new THREE.TorusGeometry(.52,.24,10,28);
+  if(s==='cone')   return new THREE.ConeGeometry(.6,1.1,10);
+  if(s==='diamond')return new THREE.OctahedronGeometry(.72);
+  return new THREE.IcosahedronGeometry(.68,0);
+}
+
+function buildSkinPreviews(){
+  const wrap=document.getElementById('spCards');
+  wrap.innerHTML='';
+  for(let i=0;i<3;i++){
+    const idx=(skinOffset+i)%SKIN_SHAPES.length;
+    const card=document.createElement('div');
+    card.className='sp-card'+(idx===selSkin?' active':'');
+    const cvs=document.createElement('canvas');cvs.width=cvs.height=58;
+    card.appendChild(cvs);
+    card.onclick=()=>{selSkin=idx;buildSkinPreviews();};
+    wrap.appendChild(card);
+    animateSkin(cvs,idx);
+  }
+}
+
+function animateSkin(cvs,idx){
+  const r=new THREE.WebGLRenderer({canvas:cvs,antialias:true,alpha:true});
+  r.setSize(58,58);r.setClearColor(0,0);
+  const s=new THREE.Scene();
+  s.add(new THREE.AmbientLight(0xffffff,1.6));
+  const dl=new THREE.DirectionalLight(0xffffff,1.2);dl.position.set(2,4,3);s.add(dl);
+  const cam=new THREE.PerspectiveCamera(38,1,.1,100);cam.position.set(0,1.4,3.2);cam.lookAt(0,.4,0);
+  const c=new THREE.Color(PREVIEW_COLORS[idx%PREVIEW_COLORS.length]);
+  const mesh=new THREE.Mesh(makeShapeGeo(SKIN_SHAPES[idx]),new THREE.MeshStandardMaterial({color:c,roughness:.25,metalness:.55}));
+  mesh.position.y=.4;s.add(mesh);
+  let t=0,alive=true;
+  function anim(){if(!alive||!cvs.isConnected)return;requestAnimationFrame(anim);t+=.022;mesh.rotation.y=t;r.render(s,cam);}
+  anim();
+}
+
+function shiftSkin(d){
+  skinOffset=(skinOffset+d+SKIN_SHAPES.length)%SKIN_SHAPES.length;
+  selSkin=(selSkin+d+SKIN_SHAPES.length)%SKIN_SHAPES.length;
+  buildSkinPreviews();
+}
+
+buildSkinPreviews();
+
+// Fetch online players count
+async function updateOnlineCount(){
+  try{
+    const r=await fetch('/api/servers');
+    const servers=await r.json();
+    const total=servers.reduce((a,s)=>a+(s.players||0),0);
+    document.getElementById('onlineCount').textContent=total>0?`${total} giocatori online`:'Sii il primo a giocare!';
+  }catch(e){
+    document.getElementById('onlineCount').textContent='Server online';
+  }
+}
+updateOnlineCount();
+setInterval(updateOnlineCount,10000);
+
+// Join game
+async function joinGame(){
+  const name=document.getElementById('nameInp').value.trim()||'Anonimo';
+  const btn=document.getElementById('playBtn');
+  const status=document.getElementById('status');
+  btn.disabled=true;
+  btn.textContent='Connessione...';
+  status.textContent='';
+  status.className='status';
+
+  try{
+    const r=await fetch('/api/best-server');
+    const {ip,port}=await r.json();
+    // Redirect to game server
+    const params=new URLSearchParams({name,skin:selSkin});
+    window.location.href=`http://${ip}:${port}/game?${params}`;
+  }catch(e){
+    status.textContent='Errore di connessione. Riprova!';
+    status.className='status error';
+    btn.disabled=false;
+    btn.textContent='GIOCA! 🍕';
+  }
+}
+
+document.getElementById('nameInp').addEventListener('keydown',e=>{
+  if(e.key==='Enter') joinGame();
+});
+</script>
+</body>
+</html>
