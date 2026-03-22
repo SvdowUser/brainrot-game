@@ -295,7 +295,7 @@ function showScreen(id){
 }
 
 function goMenu(){
-  const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
+  const lobbyBase = window._lobbyBase || 'http://46.4.204.162:3000';
   const token = window._authToken || '';
   if(socket){socket.disconnect();socket=null;}
   window.location.href = lobbyBase + (token ? '?reauth='+encodeURIComponent(token) : '');
@@ -459,7 +459,7 @@ let pingStart=0, pingMs=0;
 // ═══════════════════════════════════════════
 function joinGame(){
   const params = new URLSearchParams(window.location.search);
-  window._lobbyBase = params.get('lobby') || 'http://46.225.224.163:3000';
+  window._lobbyBase = params.get('lobby') || 'http://46.4.204.162:3000';
   _gameStartTime = Date.now();
   const name=document.getElementById('nameInp').value.trim()||'Anonimo';
   showScreen('s-connecting');
@@ -628,7 +628,7 @@ async function showResultsScreen(territory, rank, elapsed) {
 
   const token = window._authToken;
   if (!token) return;
-  const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
+  const lobbyBase = window._lobbyBase || 'http://46.4.204.162:3000';
   try {
     const r = await fetch(lobbyBase+'/api/game/result', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -818,7 +818,7 @@ window.addEventListener('load', function() {
   const name = params.get('name');
   const skin = parseInt(params.get('skin') || '0');
   const token = params.get('token') || '';
-  const lobby = params.get('lobby') || 'http://46.225.224.163:3000';
+  const lobby = params.get('lobby') || 'http://46.4.204.162:3000';
   window._lobbyBase = lobby;
   window._authToken = token || null;
 
@@ -836,7 +836,7 @@ window.addEventListener('load', function() {
 
 async function loadProfileHUD(token) {
   try {
-    const lobbyBase = window._lobbyBase || 'http://46.225.224.163:3000';
+    const lobbyBase = window._lobbyBase || 'http://46.4.204.162:3000';
     const r = await fetch(lobbyBase+'/api/auth/me', { headers:{ 'Authorization':'Bearer '+token } });
     if (!r.ok) return;
     const { user } = await r.json();

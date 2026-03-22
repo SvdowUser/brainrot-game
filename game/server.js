@@ -21,9 +21,9 @@ const COLS = 100, ROWS = 100;
 const MAX_PLAYERS = 30;
 const LOBBY_TARGET = 22;     // Always keep this many total (bots + real)
 const STEP_MS = 120;
-const MY_IP = process.env.MY_IP || '89.167.75.175';
+const MY_IP = process.env.MY_IP || '46.4.204.162';
 const MY_PORT = process.env.PORT || 3000;
-const LOBBY_URL = process.env.LOBBY_URL || 'http://46.225.224.163:3000';
+const LOBBY_URL = process.env.LOBBY_URL || 'http://46.4.204.162:3000';
 const SERVER_ID = `game-${MY_IP}`;
 
 // Carefully curated colors - no random/ugly ones
