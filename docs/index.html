@@ -131,6 +131,9 @@ const ENEMY_TYPES = [
   { name: 'Rug Puller', color: 0xff8800, speed: 2, health: 80, damage: 20, size: 0.9, score: 25 },
   { name: 'Scam Bot', color: 0xcc00cc, speed: 5, health: 25, damage: 8, size: 0.4, score: 15 },
   { name: 'Bear Market', color: 0x884444, speed: 1.5, health: 150, damage: 30, size: 1.2, score: 50 },
+  { name: 'Bombardiro', color: 0x228822, speed: 2.5, health: 60, damage: 15, size: 0.8, score: 35, flying: true },
+  { name: 'Tung Tung', color: 0x996633, speed: 4, health: 50, damage: 25, size: 0.7, score: 30, melee: true },
+  { name: 'Cappuccino', color: 0x663300, speed: 6, health: 30, damage: 40, size: 0.5, score: 45, stealth: true },
 ];
 
 const DEATH_MSGS = [
@@ -526,6 +529,23 @@ function update(dt) {
     enemy.position.add(dir.multiplyScalar(enemy.userData.speed * dt));
     enemy.userData.body.rotation.y += enemy.userData.rotSpeed * dt;
     enemy.userData.body.rotation.x += enemy.userData.rotSpeed * 0.5 * dt;
+    if (enemy.userData.flying) {
+      enemy.position.y = 2 + Math.sin(clock.elapsedTime * 2 + enemies.indexOf(enemy)) * 0.5;
+      if (Math.random() < 0.005 && gameState === 'playing') {
+        const bomb = new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8), new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff4400,emissiveIntensity:0.5}));
+        bomb.position.copy(enemy.position); bomb.position.y = 0.5;
+        bomb.userData = {type:'bomb',timer:60,damage:20}; scene.add(bomb); coins.push(bomb);
+      }
+    }
+    if (enemy.userData.stealth) {
+      const d2p = player ? player.position.distanceTo(enemy.position) : 99;
+      enemy.userData.body.material.opacity = d2p < 5 ? 1 : 0.15;
+      enemy.userData.body.material.transparent = true;
+    }
+    if (enemy.userData.melee) {
+      const d2p = player ? player.position.distanceTo(enemy.position) : 99;
+      if (d2p < 5) dir.multiplyScalar(2);
+    }
     
     // Collision with player
     const dist = player.position.distanceTo(enemy.position);
