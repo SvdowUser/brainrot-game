@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Brainrot Battle — Tralalerito Game</title>
+  <meta name="description" content="Play as Tralalerito, the shy baby shark! Collect $TRALALA coins, dodge brainrot, survive the meme chaos.">
+  <meta property="og:title" content="Brainrot Battle — Tralalerito Game">
+  <meta property="og:description" content="The official $TRALALA memecoin game. Play free in your browser!">
+  <meta property="og:type" content="website">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a1a;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: none;
+    }
+    #ui {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #score { font-size: 1.4em; color: #ffd96c; text-shadow: 0 0 10px rgba(255,217,108,0.5); }
+    #lives { font-size: 1.2em; color: #ff6b8a; }
+    #level { font-size: 1em; color: #79f1dd; }
+    #startScreen, #gameOver {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10,10,26,0.95);
+      z-index: 20;
+    }
+    #gameOver { display: none; }
+    .title { font-size: 2.5em; color: #79f1dd; margin-bottom: 10px; }
+    .subtitle { font-size: 1.1em; color: #888; margin-bottom: 30px; }
+    .btn {
+      background: linear-gradient(135deg, #ffd96c, #f4bf20);
+      color: #10131f;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      font-family: inherit;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      pointer-events: all;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .controls { color: #666; font-size: 0.85em; margin-top: 20px; }
+    .finalScore { font-size: 3em; color: #ffd96c; margin: 20px 0; }
+    .credit { position: fixed; bottom: 10px; right: 15px; color: #444; font-size: 0.7em; z-index: 5; }
+    .credit a { color: #79f1dd; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="ui">
+    <div id="score">$TRALALA: 0</div>
+    <div id="level">Level 1</div>
+    <div id="lives">❤️❤️❤️</div>
+  </div>
+
+  <div id="startScreen">
+    <div class="title">🦈 BRAINROT BATTLE</div>
+    <div class="subtitle">Play as Tralalerito — collect $TRALALA, dodge the brainrot!</div>
+    <button class="btn" id="startBtn">START GAME</button>
+    <div class="controls">Arrow keys / WASD to move • Space to dash</div>
+  </div>
+
+  <div id="gameOver">
+    <div class="title">GAME OVER</div>
+    <div class="finalScore" id="finalScore">0</div>
+    <div class="subtitle" id="gameOverMsg">nice try, fren</div>
+    <button class="btn" id="restartBtn">PLAY AGAIN</button>
+  </div>
+
+  <div class="credit">$TRALALA on Solana — <a href="https://tralalaonsol.com" target="_blank">tralalaonsol.com</a></div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const levelEl = document.getElementById('level');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOver');
+    const finalScoreEl = document.getElementById('finalScore');
+    const gameOverMsg = document.getElementById('gameOverMsg');
+
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Game state
+    let gameRunning = false;
+    let score = 0;
+    let lives = 3;
+    let level = 1;
+    let frameCount = 0;
+    let dashCooldown = 0;
+    let particles = [];
+    let shakeAmount = 0;
+
+    // Player (Tralalerito)
+    const player = {
+      x: 0, y: 0, w: 40, h: 40,
+      vx: 0, vy: 0,
+      speed: 4,
+      dashing: false,
+      dashTimer: 0,
+      color: '#79f1dd',
+      sneakerColor: '#40E0D0'
+    };
+
+    // Entities
+    let coins = [];
+    let enemies = [];
+    let powerups = [];
+
+    const MESSAGES = [
+      "tralalerito believes in you",
+      "the vibes are strong today",
+      "not a blue shark, never was",
+      "shy but surviving",
+      "memes > fundamentals",
+      "the market is temporary, memes are forever",
+      "tralalerito didn't choose the meme life",
+      "just a lil guy trying his best"
+    ];
+
+    const ENEMY_TYPES = [
+      { name: 'FUD', color: '#ff4444', size: 25, speed: 1.5, points: -1 },
+      { name: 'RUG', color: '#ff6600', size: 35, speed: 1, points: -2 },
+      { name: 'SCAM', color: '#cc00cc', size: 20, speed: 2.5, points: -1 },
+      { name: 'BEAR', color: '#884444', size: 45, speed: 0.8, points: -3 },
+    ];
+
+    // Input
+    const keys = {};
+    window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; e.preventDefault(); });
+    window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+    // Touch controls
+    let touchX = null, touchY = null;
+    canvas.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      touchX = t.clientX; touchY = t.clientY;
+      e.preventDefault();
+    }, { passive: false });
+    canvas.addEventListener('touchmove', e => {
+      const t = e.touches[0];
+      touchX = t.clientX; touchY = t.clientY;
+      e.preventDefault();
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { touchX = null; touchY = null; });
+
+    function spawnCoin() {
+      coins.push({
+        x: Math.random() * (W - 40) + 20,
+        y: Math.random() * (H - 40) + 20,
+        r: 12,
+        value: Math.random() < 0.2 ? 5 : 1,
+        pulse: Math.random() * Math.PI * 2,
+        lifetime: 600 + Math.random() * 300
+      });
+    }
+
+    function spawnEnemy() {
+      const type = ENEMY_TYPES[Math.floor(Math.random() * Math.min(ENEMY_TYPES.length, 1 + level))];
+      const side = Math.floor(Math.random() * 4);
+      let x, y;
+      if (side === 0) { x = -30; y = Math.random() * H; }
+      else if (side === 1) { x = W + 30; y = Math.random() * H; }
+      else if (side === 2) { x = Math.random() * W; y = -30; }
+      else { x = Math.random() * W; y = H + 30; }
+
+      enemies.push({
+        x, y,
+        size: type.size + Math.random() * 10,
+        speed: type.speed * (1 + level * 0.1),
+        color: type.color,
+        name: type.name,
+        angle: 0
+      });
+    }
+
+    function addParticles(x, y, color, count = 8) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          life: 30 + Math.random() * 20,
+          maxLife: 50,
+          color,
+          size: 3 + Math.random() * 4
+        });
+      }
+    }
+
+    function drawTralalerito(x, y, w, h) {
+      // Body (rounded shark shape)
+      ctx.fillStyle = '#8899aa';
+      ctx.beginPath();
+      ctx.ellipse(x + w/2, y + h/2, w/2, h/2.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Belly
+      ctx.fillStyle = '#bbccdd';
+      ctx.beginPath();
+      ctx.ellipse(x + w/2, y + h/2 + 4, w/3, h/3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes (big, cute)
+      const eyeY = y + h * 0.35;
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.ellipse(x + w * 0.35, eyeY, 5, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + w * 0.65, eyeY, 5, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Eye shine
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(x + w * 0.37, eyeY - 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + w * 0.67, eyeY - 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Shy blush
+      ctx.fillStyle = 'rgba(255,120,150,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(x + w * 0.25, eyeY + 8, 5, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + w * 0.75, eyeY + 8, 5, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Small mouth (shy)
+      ctx.strokeStyle = '#556';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x + w/2, y + h * 0.6, 4, 0.1 * Math.PI, 0.9 * Math.PI);
+      ctx.stroke();
+
+      // Dorsal fin
+      ctx.fillStyle = '#7788aa';
+      ctx.beginPath();
+      ctx.moveTo(x + w/2 - 4, y + 5);
+      ctx.lineTo(x + w/2, y - 10);
+      ctx.lineTo(x + w/2 + 4, y + 5);
+      ctx.fill();
+
+      // Sneakers (teal!)
+      ctx.fillStyle = player.sneakerColor;
+      ctx.fillRect(x + w * 0.2, y + h - 6, 10, 6);
+      ctx.fillRect(x + w * 0.6, y + h - 6, 10, 6);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(x + w * 0.2, y + h - 2, 10, 2);
+      ctx.fillRect(x + w * 0.6, y + h - 2, 10, 2);
+
+      // Dash effect
+      if (player.dashing) {
+        ctx.strokeStyle = 'rgba(121,241,221,0.5)';
+        ctx.lineWidth = 2;
+        for (let i = 1; i <= 3; i++) {
+          ctx.beginPath();
+          ctx.arc(x + w/2 - player.vx * i * 5, y + h/2 - player.vy * i * 5, w/2 - i*3, 0, Math.PI * 2);
+          ctx.globalAlpha = 0.3 / i;
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawCoin(coin) {
+      coin.pulse += 0.05;
+      const scale = 1 + Math.sin(coin.pulse) * 0.15;
+      const r = coin.r * scale;
+
+      ctx.fillStyle = coin.value > 1 ? '#ff69b4' : '#ffd96c';
+      ctx.shadowColor = coin.value > 1 ? '#ff69b4' : '#ffd96c';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(coin.x, coin.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#10131f';
+      ctx.font = `bold ${r}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', coin.x, coin.y);
+    }
+
+    function drawEnemy(e) {
+      e.angle += 0.02;
+      ctx.fillStyle = e.color;
+      ctx.shadowColor = e.color;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      // Spiky shape
+      const spikes = 6;
+      for (let i = 0; i < spikes * 2; i++) {
+        const a = e.angle + (i * Math.PI / spikes);
+        const r = i % 2 === 0 ? e.size : e.size * 0.6;
+        const px = e.x + Math.cos(a) * r;
+        const py = e.y + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(e.name, e.x, e.y);
+    }
+
+    function update() {
+      frameCount++;
+
+      // Player movement
+      let dx = 0, dy = 0;
+      if (keys['arrowleft'] || keys['a']) dx = -1;
+      if (keys['arrowright'] || keys['d']) dx = 1;
+      if (keys['arrowup'] || keys['w']) dy = -1;
+      if (keys['arrowdown'] || keys['s']) dy = 1;
+
+      // Touch
+      if (touchX !== null) {
+        dx = (touchX - player.x - player.w/2) / 50;
+        dy = (touchY - player.y - player.h/2) / 50;
+        const mag = Math.sqrt(dx*dx + dy*dy);
+        if (mag > 1) { dx /= mag; dy /= mag; }
+      }
+
+      // Dash
+      if (keys[' '] && dashCooldown <= 0 && (dx || dy)) {
+        player.dashing = true;
+        player.dashTimer = 10;
+        dashCooldown = 60;
+      }
+
+      const speed = player.dashing ? player.speed * 3 : player.speed;
+      player.vx = dx * speed;
+      player.vy = dy * speed;
+      player.x += player.vx;
+      player.y += player.vy;
+
+      // Bounds
+      player.x = Math.max(0, Math.min(W - player.w, player.x));
+      player.y = Math.max(0, Math.min(H - player.h, player.y));
+
+      if (player.dashTimer > 0) player.dashTimer--;
+      else player.dashing = false;
+      if (dashCooldown > 0) dashCooldown--;
+
+      // Spawn coins
+      if (frameCount % Math.max(30, 90 - level * 5) === 0 && coins.length < 10 + level * 2) {
+        spawnCoin();
+      }
+
+      // Spawn enemies
+      if (frameCount % Math.max(20, 80 - level * 8) === 0 && enemies.length < 5 + level * 2) {
+        spawnEnemy();
+      }
+
+      // Update coins
+      coins.forEach(c => { c.lifetime--; });
+      coins = coins.filter(c => c.lifetime > 0);
+
+      // Update enemies (chase player)
+      enemies.forEach(e => {
+        const dx = player.x + player.w/2 - e.x;
+        const dy = player.y + player.h/2 - e.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 0) {
+          e.x += (dx / dist) * e.speed;
+          e.y += (dy / dist) * e.speed;
+        }
+      });
+
+      // Collision: player <-> coins
+      coins = coins.filter(c => {
+        const dx = (player.x + player.w/2) - c.x;
+        const dy = (player.y + player.h/2) - c.y;
+        if (Math.sqrt(dx*dx + dy*dy) < player.w/2 + c.r) {
+          score += c.value;
+          addParticles(c.x, c.y, c.value > 1 ? '#ff69b4' : '#ffd96c', 12);
+          return false;
+        }
+        return true;
+      });
+
+      // Collision: player <-> enemies
+      if (!player.dashing) {
+        enemies = enemies.filter(e => {
+          const dx = (player.x + player.w/2) - e.x;
+          const dy = (player.y + player.h/2) - e.y;
+          if (Math.sqrt(dx*dx + dy*dy) < player.w/2 + e.size * 0.6) {
+            lives--;
+            shakeAmount = 15;
+            addParticles(e.x, e.y, e.color, 15);
+            if (lives <= 0) endGame();
+            return false;
+          }
+          return true;
+        });
+      } else {
+        // Dashing destroys enemies!
+        enemies = enemies.filter(e => {
+          const dx = (player.x + player.w/2) - e.x;
+          const dy = (player.y + player.h/2) - e.y;
+          if (Math.sqrt(dx*dx + dy*dy) < player.w/2 + e.size) {
+            score += 3;
+            addParticles(e.x, e.y, '#79f1dd', 20);
+            return false;
+          }
+          return true;
+        });
+      }
+
+      // Remove off-screen enemies
+      enemies = enemies.filter(e =>
+        e.x > -100 && e.x < W + 100 && e.y > -100 && e.y < H + 100
+      );
+
+      // Level up
+      const newLevel = Math.floor(score / 20) + 1;
+      if (newLevel > level) {
+        level = newLevel;
+        addParticles(player.x + player.w/2, player.y + player.h/2, '#79f1dd', 30);
+      }
+
+      // Particles
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+        p.life--;
+      });
+      particles = particles.filter(p => p.life > 0);
+
+      // Screen shake
+      if (shakeAmount > 0) shakeAmount *= 0.9;
+      if (shakeAmount < 0.5) shakeAmount = 0;
+    }
+
+    function draw() {
+      ctx.save();
+      if (shakeAmount > 0) {
+        ctx.translate(
+          (Math.random() - 0.5) * shakeAmount,
+          (Math.random() - 0.5) * shakeAmount
+        );
+      }
+
+      // Background
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(0, 0, W, H);
+
+      // Grid
+      ctx.strokeStyle = 'rgba(121,241,221,0.03)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 0; y < H; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      // Coins
+      coins.forEach(drawCoin);
+
+      // Enemies
+      enemies.forEach(drawEnemy);
+
+      // Player
+      drawTralalerito(player.x, player.y, player.w, player.h);
+
+      // Particles
+      particles.forEach(p => {
+        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // UI
+      scoreEl.textContent = `$TRALALA: ${score}`;
+      livesEl.textContent = '❤️'.repeat(Math.max(0, lives));
+      levelEl.textContent = `Level ${level}`;
+
+      // Dash cooldown indicator
+      if (dashCooldown > 0) {
+        ctx.fillStyle = 'rgba(121,241,221,0.3)';
+        ctx.fillRect(W/2 - 30, H - 30, 60 * (1 - dashCooldown/60), 5);
+      }
+
+      ctx.restore();
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      score = 0; lives = 3; level = 1; frameCount = 0;
+      coins = []; enemies = []; particles = [];
+      player.x = W/2 - player.w/2;
+      player.y = H/2 - player.h/2;
+      dashCooldown = 0;
+      gameRunning = true;
+      startScreen.style.display = 'none';
+      gameOverScreen.style.display = 'none';
+      gameLoop();
+    }
+
+    function endGame() {
+      gameRunning = false;
+      finalScoreEl.textContent = `$${score} TRALALA`;
+      const msgs = MESSAGES;
+      gameOverMsg.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+      gameOverScreen.style.display = 'flex';
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+  </script>
+</body>
+</html>
