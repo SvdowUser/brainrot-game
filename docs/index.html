@@ -1,5 +1,22 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><title>BrainRotBattle.io - Play Tralalerito's Meme Solana Game</title>
 <<meta property="og:title" content="BrainRotBattle.io - Play Tralalerito's Meme Solana Game" /><meta property="og:type" content="website" /><meta property="og:url" content="https://brainrotbattle.io" /><meta property="og:image" content="/path/to/image.jpg" /><meta property="og:description" content="Join BrainRotBattle.io, the $TRALALA Solana memecoin game! Play now and enjoy fun gameplay, memes, and a unique UI. Start your journey today!" /> content="Join BrainRotBattle.io, the $TRALALA Solana memecoin game! Play now and enjoy fun gameplay, memes, and a unique UI. Start your journey today!"><script>
+    // Ambient particle system
+    function createAmbientParticles() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            const size = 3 + Math.random() * 7;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = 'hsl(' + (Math.random() * 360) + ',100%,50%)';
+            ctx.fill();
+        }
+    }
+
+    setInterval(createAmbientParticles, 1000);
+
     // Glow effect for player trail
     function createGlowTrail(playerX, playerY) {
         const ctx = document.getElementById('canvas').getContext('2d');
